@@ -172,3 +172,128 @@ def test_get_equipment_by_category_and_status(client):
             "status": "active",
         }
     ]
+
+
+def test_equipment_available_when_no_reservations(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s);",
+                ("Basketball", "BB-001", category["id"]),
+            )
+
+    response = client.get(
+        "/equipment/1/availability?start_date=2026-09-15&end_date=2026-09-18"
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": True}
+
+
+def test_equipment_unavailable_when_reservation_overlaps(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id;",
+                ("test@example.com", "fake-hash"),
+            )
+
+            user = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s);",
+                (user["id"], equipment["id"], "2026-09-10", "2026-09-15"),
+            )
+
+    response = client.get(
+        "/equipment/1/availability?start_date=2026-09-15&end_date=2026-09-18"
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": False}
+
+
+def test_equipment_available_when_reservation_does_not_overlap(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id;",
+                ("test@example.com", "fake-hash"),
+            )
+
+            user = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s);",
+                (user["id"], equipment["id"], "2026-09-10", "2026-09-15"),
+            )
+
+    response = client.get(
+        "/equipment/1/availability?start_date=2026-09-16&end_date=2026-09-20"
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": True}
+
+
+def test_equipment_unavailable_when_not_active(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id, status) VALUES (%s, %s, %s, %s) "
+                "RETURNING id;",
+                ("Basketball", "BB-001", category["id"], "maintenance"),
+            )
+
+            equipment = cursor.fetchone()
+
+    response = client.get(
+        f"/equipment/{equipment['id']}/availability?start_date=2026-09-16&end_date=2026-09-20"
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": False}
+
+
+def test_equipment_availability_invalid_date_range(client):
+    response = client.get(
+        "/equipment/1/availability?start_date=2026-09-20&end_date=2026-09-16"
+    )
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Start date cannot be after end date"}
+
+
+def test_equipment_availability_not_found(client):
+    response = client.get(
+        "/equipment/999/availability?start_date=2026-09-16&end_date=2026-09-20"
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Equipment not found"}

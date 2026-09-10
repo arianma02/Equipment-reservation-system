@@ -35,3 +35,7 @@ class EquipmentResponse(BaseModel):
     category_id: int
     category_name: str
     status: str
+
+
+class AvailabilityResponse(BaseModel):
+    available: bool
