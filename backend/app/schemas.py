@@ -1,8 +1,10 @@
 from pydantic import BaseModel, EmailStr, Field
 
+
 class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
+
 
 class UserResponse(BaseModel):
     id: int
@@ -10,10 +12,26 @@ class UserResponse(BaseModel):
     role: str
     status: str
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+
+
+class EquipmentResponse(BaseModel):
+    id: int
+    name: str
+    asset_tag: str
+    category_id: int
+    category_name: str
+    status: str

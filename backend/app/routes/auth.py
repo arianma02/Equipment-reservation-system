@@ -10,6 +10,7 @@ import psycopg
 
 router = APIRouter()
 
+
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register_user(user: UserRegister):
     hashed_password = hash_password(user.password)
@@ -18,7 +19,7 @@ def register_user(user: UserRegister):
             with connection.cursor() as cursor:
                 cursor.execute(
                     "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id, email, role, status",
-                    (user.email, hashed_password)
+                    (user.email, hashed_password),
                 )
                 new_user = cursor.fetchone()
         return new_user
@@ -32,7 +33,7 @@ def login_user(user: UserLogin):
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT id, password_hash, status FROM users WHERE email = %s",
-                (user.email,)
+                (user.email,),
             )
             db_user = cursor.fetchone()
 
@@ -47,5 +48,5 @@ def login_user(user: UserLogin):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user = Depends(get_current_user)):
+def get_me(current_user=Depends(get_current_user)):
     return current_user

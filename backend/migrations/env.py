@@ -21,10 +21,13 @@ database_url = URL.create(
     password=os.getenv("DB_PASSWORD"),
     host=os.getenv("DB_HOST"),
     port=int(os.getenv("DB_PORT")),
-    database=os.getenv("DB_NAME")
+    database=os.getenv("DB_NAME"),
 )
 
-config.set_main_option("sqlalchemy.url", database_url.render_as_string(hide_password=False).replace("%", "%%"))
+config.set_main_option(
+    "sqlalchemy.url",
+    database_url.render_as_string(hide_password=False).replace("%", "%%"),
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -81,9 +84,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

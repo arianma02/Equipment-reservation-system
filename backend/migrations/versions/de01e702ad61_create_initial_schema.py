@@ -1,18 +1,18 @@
 """create initial schema
 
 Revision ID: de01e702ad61
-Revises: 
+Revises:
 Create Date: 2026-09-10 14:16:42.057073
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
-revision: str = 'de01e702ad61'
+revision: str = "de01e702ad61"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,23 +25,17 @@ def upgrade() -> None:
         sa.Column("email", sa.String(), nullable=False, unique=True),
         sa.Column("password_hash", sa.String(), nullable=False),
         sa.Column("role", sa.String(), nullable=False, server_default="user"),
-        sa.Column("status", sa.String(), nullable=False, server_default="active")
+        sa.Column("status", sa.String(), nullable=False, server_default="active"),
     )
+    op.create_check_constraint("check_users_role", "users", "role IN ('user', 'admin')")
     op.create_check_constraint(
-        "check_users_role",
-        "users",
-        "role IN ('user', 'admin')"
-    )
-    op.create_check_constraint(
-        "check_users_status",
-        "users",
-        "status IN ('active', 'disabled')"
+        "check_users_status", "users", "status IN ('active', 'disabled')"
     )
 
     op.create_table(
         "categories",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("name", sa.String(), nullable=False, unique=True)
+        sa.Column("name", sa.String(), nullable=False, unique=True),
     )
 
     op.create_table(
@@ -57,9 +51,8 @@ def upgrade() -> None:
     op.create_check_constraint(
         "check_equipment_status",
         "equipment",
-        "status IN ('active', 'maintenance', 'retired')"
+        "status IN ('active', 'maintenance', 'retired')",
     )
-
 
     op.create_table(
         "reservations",
@@ -74,16 +67,14 @@ def upgrade() -> None:
     )
 
     op.create_check_constraint(
-        "check_reservations_status",
-        "reservations",
-        "status IN ('active', 'cancelled')"
+        "check_reservations_status", "reservations", "status IN ('active', 'cancelled')"
     )
 
     op.create_check_constraint(
-        "check_reservations_dates",
-        "reservations",
-        "end_date >= start_date"
+        "check_reservations_dates", "reservations", "end_date >= start_date"
     )
+
+
 def downgrade() -> None:
     op.drop_table("reservations")
     op.drop_table("equipment")

@@ -7,7 +7,9 @@ from app.security import decode_access_token
 bearer_scheme = HTTPBearer()
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+):
     token = credentials.credentials
     try:
         payload = decode_access_token(token)
@@ -18,8 +20,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, email, role, status FROM users WHERE id = %s",
-                (user_id,)
+                "SELECT id, email, role, status FROM users WHERE id = %s", (user_id,)
             )
             user = cursor.fetchone()
 
