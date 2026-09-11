@@ -71,3 +71,24 @@ class AdminReservationResponse(BaseModel):
     start_date: date
     end_date: date
     status: str
+
+
+class EquipmentCreate(BaseModel):
+    name: str
+    asset_tag: str
+    category_id: int
+
+
+class EquipmentUpdate(BaseModel):
+    name: str | None = None
+    asset_tag: str | None = None
+    category_id: int | None = None
+    status: Literal["active", "maintenance", "retired"] | None = None
+
+
+class CategoryCreate(BaseModel):
+    name: str
+
+
+class CategoryUpdate(BaseModel):
+    name: str

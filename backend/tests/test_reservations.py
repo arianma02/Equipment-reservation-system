@@ -1,4 +1,5 @@
 from app.database import get_connection
+from datetime import date, timedelta
 
 
 def test_create_reservation(client):
@@ -34,7 +35,6 @@ def test_create_reservation(client):
     )
 
     assert response.status_code == 201
-    print(response.json())
     assert response.json() == {
         "id": 1,
         "user_id": 1,
@@ -290,12 +290,12 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
                 (
                     equipment["id"],
                     user1["id"],
-                    "2026-09-10",
-                    "2026-09-15",
+                    date.today() + timedelta(days=1),
+                    date.today() + timedelta(days=5),
                     equipment["id"],
                     user2["id"],
-                    "2026-09-20",
-                    "2026-09-25",
+                    date.today() + timedelta(days=10),
+                    date.today() + timedelta(days=15),
                 ),
             )
     user_one = client.post(
@@ -311,8 +311,8 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
             "id": 1,
             "user_id": 1,
             "equipment_id": 1,
-            "start_date": "2026-09-10",
-            "end_date": "2026-09-15",
+            "start_date": (date.today() + timedelta(days=1)).isoformat(),
+            "end_date": (date.today() + timedelta(days=5)).isoformat(),
             "status": "active",
         }
     ]
@@ -746,3 +746,127 @@ def test_normal_user_cannot_get_all_reservations(client):
 def test_get_all_reservations_requires_authentication(client):
     response = client.get("/reservations")
     assert response.status_code == 401
+
+
+def test_past_reservation_is_returned_as_completed(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    user["id"],
+                    equipment["id"],
+                    date.today() - timedelta(days=5),
+                    date.today() - timedelta(days=2),
+                ),
+            )
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/reservations/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["status"] == "completed"
+
+
+def test_admin_sees_past_reservation_as_completed(client):
+    admin = client.post(
+        "/register",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    ).json()
+
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET role = 'admin' WHERE id = %s",
+                (admin["id"],),
+            )
+
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    user["id"],
+                    equipment["id"],
+                    date.today() - timedelta(days=5),
+                    date.today() - timedelta(days=2),
+                ),
+            )
+
+    login_response = client.post(
+        "/login",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/reservations",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["status"] == "completed"

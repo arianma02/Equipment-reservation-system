@@ -70,9 +70,22 @@ def get_my_reservations(current_user=Depends(get_current_user)):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, user_id, equipment_id, start_date, end_date, status "
-                "FROM reservations WHERE user_id = %s "
-                "ORDER BY start_date",
+                """
+                SELECT
+                    id,
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date,
+                    CASE
+                        WHEN status = 'active' AND end_date < CURRENT_DATE
+                        THEN 'completed'
+                        ELSE status
+                    END AS status
+                FROM reservations
+                WHERE user_id = %s
+                ORDER BY start_date
+                """,
                 (current_user["id"],),
             )
             reservations = cursor.fetchall()
@@ -80,7 +93,9 @@ def get_my_reservations(current_user=Depends(get_current_user)):
     return reservations
 
 
-@router.patch("/reservations/{reservation_id}/cancel")
+@router.patch(
+    "/reservations/{reservation_id}/cancel", response_model=ReservationResponse
+)
 def cancel_reservation(reservation_id: int, current_user=Depends(get_current_user)):
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -137,7 +152,11 @@ def get_all_reservations():
                     e.name AS equipment_name,
                     r.start_date,
                     r.end_date,
-                    r.status
+                    CASE
+                        WHEN r.status = 'active' AND r.end_date < CURRENT_DATE
+                        THEN 'completed'
+                        ELSE r.status
+                    END AS status
                 FROM reservations r
                 JOIN users u ON r.user_id = u.id
                 JOIN equipment e ON r.equipment_id = e.id

@@ -1,13 +1,24 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Literal
 from app.database import get_connection
-from app.schemas import EquipmentResponse, AvailabilityResponse
+from app.schemas import (
+    EquipmentResponse,
+    AvailabilityResponse,
+    EquipmentCreate,
+    EquipmentUpdate,
+)
+from app.dependencies import get_current_admin
 from datetime import date
+from psycopg.errors import UniqueViolation
 
 router = APIRouter()
 
 
 @router.get("/equipment", response_model=list[EquipmentResponse])
-def get_equipment(category_id: int | None = None, status: str | None = None):
+def get_equipment(
+    category_id: int | None = None,
+    status: Literal["active", "maintenance", "retired"] | None = None,
+):
     params = []
     conditions = []
     with get_connection() as connection:
@@ -84,3 +95,180 @@ def check_availability(equipment_id: int, start_date: date, end_date: date):
         return {"available": False}
 
     return {"available": True}
+
+
+@router.post(
+    "/equipment",
+    response_model=EquipmentResponse,
+    status_code=201,
+    dependencies=[Depends(get_current_admin)],
+)
+def create_equipment(equipment: EquipmentCreate):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, name
+                FROM categories
+                WHERE id = %s
+                """,
+                (equipment.category_id,),
+            )
+            category = cursor.fetchone()
+
+            if not category:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Category not found",
+                )
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO equipment (
+                        name,
+                        asset_tag,
+                        category_id
+                    )
+                    VALUES (%s, %s, %s)
+                    RETURNING id, name, asset_tag, category_id, status
+                    """,
+                    (
+                        equipment.name,
+                        equipment.asset_tag,
+                        equipment.category_id,
+                    ),
+                )
+
+                new_equipment = cursor.fetchone()
+            except UniqueViolation:
+                raise HTTPException(status_code=409, detail="Asset tag already exists")
+
+    new_equipment["category_name"] = category["name"]
+
+    return new_equipment
+
+
+@router.patch(
+    "/equipment/{equipment_id}",
+    response_model=EquipmentResponse,
+    dependencies=[Depends(get_current_admin)],
+)
+def update_equipment(equipment_id: int, update: EquipmentUpdate):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT name, asset_tag, category_id, status
+                FROM equipment
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (equipment_id,),
+            )
+
+            current_equipment = cursor.fetchone()
+
+            if not current_equipment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Equipment not found",
+                )
+
+            new_name = (
+                update.name if update.name is not None else current_equipment["name"]
+            )
+
+            new_asset_tag = (
+                update.asset_tag
+                if update.asset_tag is not None
+                else current_equipment["asset_tag"]
+            )
+
+            new_category_id = (
+                update.category_id
+                if update.category_id is not None
+                else current_equipment["category_id"]
+            )
+            cursor.execute(
+                """
+                SELECT name
+                FROM categories
+                WHERE id = %s
+                """,
+                (new_category_id,),
+            )
+
+            category = cursor.fetchone()
+
+            if not category:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Category not found",
+                )
+
+            new_status = (
+                update.status
+                if update.status is not None
+                else current_equipment["status"]
+            )
+            if new_status == "maintenance":
+                cursor.execute(
+                    """
+                    UPDATE reservations
+                    SET status = 'cancelled'
+                    WHERE equipment_id = %s
+                    AND status = 'active'
+                    AND end_date >= CURRENT_DATE
+                    """,
+                    (equipment_id,),
+                )
+            if new_status == "retired":
+                cursor.execute(
+                    """
+                    SELECT 1
+                    FROM reservations
+                    WHERE equipment_id = %s
+                    AND status = 'active'
+                    AND end_date >= CURRENT_DATE
+                    LIMIT 1
+                    """,
+                    (equipment_id,),
+                )
+
+                active_reservation = cursor.fetchone()
+
+                if active_reservation:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Cannot retire equipment with active reservations",
+                    )
+            try:
+                cursor.execute(
+                    """
+                    UPDATE equipment
+                    SET name = %s,
+                        asset_tag = %s,
+                        category_id = %s,
+                        status = %s
+                    WHERE id = %s
+                    RETURNING id, name, asset_tag, category_id, status
+                    """,
+                    (
+                        new_name,
+                        new_asset_tag,
+                        new_category_id,
+                        new_status,
+                        equipment_id,
+                    ),
+                )
+
+                updated_equipment = cursor.fetchone()
+
+            except UniqueViolation:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Asset tag already exists",
+                )
+            updated_equipment["category_name"] = category["name"]
+
+    return updated_equipment
