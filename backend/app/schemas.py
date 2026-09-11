@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import date
+from typing import Literal
 
 
 class UserRegister(BaseModel):
@@ -51,6 +52,22 @@ class ReservationResponse(BaseModel):
     id: int
     user_id: int
     equipment_id: int
+    start_date: date
+    end_date: date
+    status: str
+
+
+class UserUpdate(BaseModel):
+    role: Literal["user", "admin"] | None = None
+    status: Literal["active", "disabled"] | None = None
+
+
+class AdminReservationResponse(BaseModel):
+    id: int
+    user_id: int
+    user_email: str
+    equipment_id: int
+    equipment_name: str
     start_date: date
     end_date: date
     status: str

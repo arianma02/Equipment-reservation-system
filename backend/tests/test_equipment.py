@@ -250,7 +250,7 @@ def test_equipment_available_when_reservation_does_not_overlap(client):
 
             cursor.execute(
                 "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s);",
-                (user["id"], equipment["id"], "2026-09-10", "2026-09-15"),
+                (equipment["id"], user["id"], "2026-09-10", "2026-09-15"),
             )
 
     response = client.get(

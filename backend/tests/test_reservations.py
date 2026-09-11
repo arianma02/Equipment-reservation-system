@@ -259,3 +259,490 @@ def test_create_same_day_reservation(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert first_response.status_code == 201
+
+
+def test_get_my_reservations_only_returns_current_users_reservation(client):
+    user1 = client.post(
+        "/register",
+        json={"email": "test1@example.com", "password": "testpassword"},
+    ).json()
+    user2 = client.post(
+        "/register",
+        json={"email": "test2@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                ("Basketball", "BB-001", category["id"]),
+            )
+
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s), (%s, %s, %s, %s);",
+                (
+                    equipment["id"],
+                    user1["id"],
+                    "2026-09-10",
+                    "2026-09-15",
+                    equipment["id"],
+                    user2["id"],
+                    "2026-09-20",
+                    "2026-09-25",
+                ),
+            )
+    user_one = client.post(
+        "/login", json={"email": "test1@example.com", "password": "testpassword"}
+    )
+    token_one = user_one.json()["access_token"]
+    user_one_reservations = client.get(
+        "/reservations/me", headers={"Authorization": f"Bearer {token_one}"}
+    )
+    assert user_one_reservations.status_code == 200
+    assert user_one_reservations.json() == [
+        {
+            "id": 1,
+            "user_id": 1,
+            "equipment_id": 1,
+            "start_date": "2026-09-10",
+            "end_date": "2026-09-15",
+            "status": "active",
+        }
+    ]
+
+
+def test_get_my_reservations_empty(client):
+    client.post(
+        "/register", json={"email": "test@example.com", "password": "testpassword"}
+    )
+    login_response = client.post(
+        "/login", json={"email": "test@example.com", "password": "testpassword"}
+    )
+    token = login_response.json()["access_token"]
+    response = client.get(
+        "/reservations/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.json() == []
+    assert response.status_code == 200
+
+
+def test_get_my_reservations_requires_authentication(client):
+    response = client.get("/reservations/me")
+    assert response.status_code == 401
+
+
+def test_cancel_own_reservation(client):
+    register_response = client.post(
+        "/register", json={"email": "test@example.com", "password": "testpassword"}
+    ).json()
+    login_response = client.post(
+        "/login", json={"email": "test@example.com", "password": "testpassword"}
+    )
+    token = login_response.json()["access_token"]
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                ("Basketball", "BB-001", category["id"]),
+            )
+
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s) RETURNING id;",
+                (equipment["id"], register_response["id"], "2090-09-10", "2090-09-15"),
+            )
+            reservation = cursor.fetchone()
+    response = client.patch(
+        f"/reservations/{reservation["id"]}/cancel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+
+
+def test_cannot_cancel_another_users_reservation(client):
+    user1 = client.post(
+        "/register",
+        json={"email": "user1@example.com", "password": "testpassword"},
+    ).json()
+
+    client.post(
+        "/register",
+        json={"email": "user2@example.com", "password": "testpassword"},
+    )
+
+    login_user2 = client.post(
+        "/login",
+        json={"email": "user2@example.com", "password": "testpassword"},
+    )
+    token_user2 = login_user2.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    equipment["id"],
+                    user1["id"],
+                    "2090-09-10",
+                    "2090-09-15",
+                ),
+            )
+            reservation = cursor.fetchone()
+
+    response = client.patch(
+        f"/reservations/{reservation["id"]}/cancel",
+        headers={"Authorization": f"Bearer {token_user2}"},
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Not authorized to cancel this reservation"}
+
+
+def test_cancel_already_cancelled_reservation(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    token = login_response.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date,
+                    status
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (equipment["id"], user["id"], "2090-09-10", "2090-09-15", "cancelled"),
+            )
+            reservation = cursor.fetchone()
+
+    response = client.patch(
+        f"/reservations/{reservation["id"]}/cancel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Reservation already cancelled"}
+
+
+def test_cancel_completed_reservation(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    token = login_response.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                    INSERT INTO equipment (name, asset_tag, category_id)
+                    VALUES (%s, %s, %s)
+                    RETURNING id
+                    """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                    INSERT INTO reservations (
+                        equipment_id,
+                        user_id,
+                        start_date,
+                        end_date
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                (equipment["id"], user["id"], "2026-09-05", "2026-09-06"),
+            )
+            reservation = cursor.fetchone()
+
+    response = client.patch(
+        f"/reservations/{reservation["id"]}/cancel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Completed reservations cannot be cancelled"}
+
+
+def test_cancel_reservation_not_found(client):
+    client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.patch(
+        "/reservations/999/cancel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Reservation not found"}
+
+
+def test_admin_can_cancel_another_users_reservation(client):
+    owner = client.post(
+        "/register",
+        json={"email": "owner@example.com", "password": "testpassword"},
+    ).json()
+
+    admin = client.post(
+        "/register",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET role = 'admin' WHERE id = %s",
+                (admin["id"],),
+            )
+
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    equipment["id"],
+                    owner["id"],
+                    "2090-09-10",
+                    "2090-09-15",
+                ),
+            )
+            reservation = cursor.fetchone()
+
+    admin_login = client.post(
+        "/login",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    )
+    admin_token = admin_login.json()["access_token"]
+
+    response = client.patch(
+        f"/reservations/{reservation['id']}/cancel",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+
+
+def test_admin_can_get_all_reservations(client):
+    admin = client.post(
+        "/register",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    ).json()
+
+    user1 = client.post(
+        "/register",
+        json={"email": "user1@example.com", "password": "testpassword"},
+    ).json()
+
+    user2 = client.post(
+        "/register",
+        json={"email": "user2@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET role = 'admin' WHERE id = %s",
+                (admin["id"],),
+            )
+
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                """,
+                (user1["id"], equipment["id"], "2090-09-10", "2090-09-12"),
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                """,
+                (user2["id"], equipment["id"], "2090-09-15", "2090-09-17"),
+            )
+
+    login_response = client.post(
+        "/login",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/reservations",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+    assert response.json()[0]["user_email"] == "user1@example.com"
+    assert response.json()[0]["equipment_name"] == "Basketball"
+
+    assert response.json()[1]["user_email"] == "user2@example.com"
+    assert response.json()[1]["equipment_name"] == "Basketball"
+
+
+def test_normal_user_cannot_get_all_reservations(client):
+    client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/reservations",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Admin access required"}
+
+
+def test_get_all_reservations_requires_authentication(client):
+    response = client.get("/reservations")
+    assert response.status_code == 401
