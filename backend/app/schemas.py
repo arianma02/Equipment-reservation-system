@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+from datetime import date
 
 
 class UserRegister(BaseModel):
@@ -39,3 +40,17 @@ class EquipmentResponse(BaseModel):
 
 class AvailabilityResponse(BaseModel):
     available: bool
+
+
+class ReservationCreate(BaseModel):
+    start_date: date
+    end_date: date
+
+
+class ReservationResponse(BaseModel):
+    id: int
+    user_id: int
+    equipment_id: int
+    start_date: date
+    end_date: date
+    status: str
