@@ -1,4 +1,7 @@
+import { Link } from "react-router-dom";
+
 type EquipmentCardProps = {
+  id: number;
   name: string;
   assetTag: string;
   categoryName: string;
@@ -6,6 +9,7 @@ type EquipmentCardProps = {
 };
 
 function EquipmentCard({
+  id,
   name,
   assetTag,
   categoryName,
@@ -13,7 +17,10 @@ function EquipmentCard({
 }: EquipmentCardProps) {
   return (
     <article>
-      <h2>{name}</h2>
+      <h2>
+        <Link to={`/equipment/${id}`}>{name}</Link>
+      </h2>
+
       <p>Asset tag: {assetTag}</p>
       <p>Category: {categoryName}</p>
       <p>Status: {status}</p>

@@ -1,12 +1,19 @@
+import { Navigate, Route, Routes } from "react-router-dom";
 import Header from "./components/Header";
 import EquipmentPage from "./pages/EquipmentPage";
+import EquipmentDetailPage from "./pages/EquipmentDetailPage";
 
 function App() {
   return (
-    <main>
+    <>
       <Header />
-      <EquipmentPage />
-    </main>
+
+      <Routes>
+        <Route path="/equipment" element={<EquipmentPage />} />
+        <Route path="/" element={<Navigate to="/equipment" replace />} />
+        <Route path="/equipment/:id" element={<EquipmentDetailPage />} />
+      </Routes>
+    </>
   );
 }
 

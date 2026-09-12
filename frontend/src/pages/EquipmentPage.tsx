@@ -1,87 +1,87 @@
-import { useEffect, useState } from 'react'
-import EquipmentCard from '../components/EquipmentCard'
+import { useEffect, useState } from "react";
+import EquipmentCard from "../components/EquipmentCard";
 
 type Equipment = {
-  id: number
-  name: string
-  asset_tag: string
-  category_id: number
-  category_name: string
-  status: string
-}
+  id: number;
+  name: string;
+  asset_tag: string;
+  category_id: number;
+  category_name: string;
+  status: string;
+};
 
 type Category = {
-  id: number
-  name: string
-}
+  id: number;
+  name: string;
+};
 
 function EquipmentPage() {
-  const [equipment, setEquipment] = useState<Equipment[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [statusFilter, setStatusFilter] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadCategories() {
-      const response = await fetch('http://127.0.0.1:8000/categories')
-      const data = await response.json()
+      const response = await fetch("http://127.0.0.1:8000/categories");
+      const data = await response.json();
 
-      setCategories(data)
+      setCategories(data);
     }
 
-    loadCategories()
-  }, [])
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     async function loadEquipment() {
-      setLoading(true)
-      setError('')
+      setLoading(true);
+      setError("");
 
       try {
-        const params = new URLSearchParams()
+        const params = new URLSearchParams();
 
         if (statusFilter) {
-          params.append('status', statusFilter)
+          params.append("status", statusFilter);
         }
 
         if (categoryFilter) {
-          params.append('category_id', categoryFilter)
+          params.append("category_id", categoryFilter);
         }
 
-        const queryString = params.toString()
+        const queryString = params.toString();
 
         const url = queryString
           ? `http://127.0.0.1:8000/equipment?${queryString}`
-          : 'http://127.0.0.1:8000/equipment'
+          : "http://127.0.0.1:8000/equipment";
 
-        const response = await fetch(url)
+        const response = await fetch(url);
 
         if (!response.ok) {
-          throw new Error('Failed to load equipment')
+          throw new Error("Failed to load equipment");
         }
 
-        const data = await response.json()
-        setEquipment(data)
+        const data = await response.json();
+        setEquipment(data);
       } catch {
-        setError('Failed to load equipment')
+        setError("Failed to load equipment");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadEquipment()
-  }, [statusFilter, categoryFilter])
+    loadEquipment();
+  }, [statusFilter, categoryFilter]);
 
   if (loading) {
-    return <p>Loading equipment...</p>
+    return <p>Loading equipment...</p>;
   }
 
   if (error) {
-    return <p>{error}</p>
+    return <p>{error}</p>;
   }
 
   return (
@@ -122,6 +122,7 @@ function EquipmentPage() {
       {equipment.map((item) => (
         <EquipmentCard
           key={item.id}
+          id={item.id}
           name={item.name}
           assetTag={item.asset_tag}
           categoryName={item.category_name}
@@ -129,7 +130,7 @@ function EquipmentPage() {
         />
       ))}
     </section>
-  )
+  );
 }
 
-export default EquipmentPage
+export default EquipmentPage;
