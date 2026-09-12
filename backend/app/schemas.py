@@ -56,6 +56,15 @@ class ReservationResponse(BaseModel):
     end_date: date
     status: str
 
+class UserReservationResponse(BaseModel):
+    id: int
+    user_id: int
+    equipment_id: int
+    equipment_name: str
+    start_date: date
+    end_date: date
+    status: str
+
 
 class UserUpdate(BaseModel):
     role: Literal["user", "admin"] | None = None

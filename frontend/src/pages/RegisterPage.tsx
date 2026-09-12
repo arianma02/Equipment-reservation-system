@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { API_URL } from "../config";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config";
 
 function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -69,6 +68,7 @@ function RegisterPage() {
         </label>
 
         <button type="submit">Register</button>
+
         {error && <p>{error}</p>}
       </form>
     </main>

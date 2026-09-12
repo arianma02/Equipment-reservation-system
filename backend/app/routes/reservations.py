@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import get_connection
 from app.dependencies import get_current_user, get_current_admin
-from app.schemas import ReservationCreate, ReservationResponse, AdminReservationResponse
+from app.schemas import ReservationCreate, ReservationResponse, UserReservationResponse, AdminReservationResponse
 
 from datetime import date
 
@@ -65,26 +65,28 @@ def create_reservation(
     return new_reservation
 
 
-@router.get("/reservations/me", response_model=list[ReservationResponse])
+@router.get("/reservations/me", response_model=list[UserReservationResponse])
 def get_my_reservations(current_user=Depends(get_current_user)):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
                 SELECT
-                    id,
-                    user_id,
-                    equipment_id,
-                    start_date,
-                    end_date,
+                    r.id,
+                    r.user_id,
+                    r.equipment_id,
+                    e.name AS equipment_name,
+                    r.start_date,
+                    r.end_date,
                     CASE
-                        WHEN status = 'active' AND end_date < CURRENT_DATE
+                        WHEN r.status = 'active' AND r.end_date < CURRENT_DATE
                         THEN 'completed'
-                        ELSE status
+                        ELSE r.status
                     END AS status
-                FROM reservations
-                WHERE user_id = %s
-                ORDER BY start_date
+                FROM reservations r
+                JOIN equipment e ON r.equipment_id = e.id
+                WHERE r.user_id = %s
+                ORDER BY r.start_date
                 """,
                 (current_user["id"],),
             )

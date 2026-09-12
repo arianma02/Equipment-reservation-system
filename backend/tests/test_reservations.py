@@ -311,11 +311,12 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
             "id": 1,
             "user_id": 1,
             "equipment_id": 1,
+            "equipment_name": "Basketball",
             "start_date": (date.today() + timedelta(days=1)).isoformat(),
             "end_date": (date.today() + timedelta(days=5)).isoformat(),
             "status": "active",
-        }
-    ]
+    }
+]
 
 
 def test_get_my_reservations_empty(client):
