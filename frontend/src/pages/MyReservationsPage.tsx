@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
-
-type Reservation = {
-  id: number;
-  user_id: number;
-  equipment_id: number;
-  equipment_name: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-};
+import type { Reservation } from "../types";
 
 function MyReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);

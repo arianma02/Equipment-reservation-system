@@ -13,3 +13,13 @@ export type Equipment = {
   category_name: string;
   status: string;
 };
+
+export type Reservation = {
+  id: number;
+  user_id: number;
+  equipment_id: number;
+  equipment_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+};

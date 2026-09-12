@@ -63,14 +63,19 @@ function EquipmentDetailPage() {
         `${API_URL}/equipment/${id}/availability?${params.toString()}`,
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to check availability");
+        throw new Error(data.detail || "Failed to check availability");
       }
 
-      const data = await response.json();
       setAvailability(data.available);
-    } catch {
-      setAvailabilityError("Failed to check availability");
+    } catch (error) {
+      if (error instanceof Error) {
+        setAvailabilityError(error.message);
+      } else {
+        setAvailabilityError("Failed to check availability");
+      }
     } finally {
       setAvailabilityLoading(false);
     }
@@ -129,7 +134,7 @@ function EquipmentDetailPage() {
   }
 
   return (
-    <section>
+    <main>
       <h2>{equipment.name}</h2>
       <p>Asset tag: {equipment.asset_tag}</p>
       <p>Category: {equipment.category_name}</p>
@@ -181,7 +186,7 @@ function EquipmentDetailPage() {
           <Link to="/login">Login</Link> to reserve this equipment.
         </p>
       )}
-    </section>
+    </main>
   );
 }
 

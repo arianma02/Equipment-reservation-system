@@ -18,6 +18,8 @@ function EquipmentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [categoryError, setCategoryError] = useState("");
+
   useEffect(() => {
     async function loadCategories() {
       try {
@@ -68,7 +70,7 @@ function EquipmentPage() {
         const data = await response.json();
         setEquipment(data);
       } catch {
-        setError("Failed to load equipment");
+        setCategoryError("Failed to load categories");
       } finally {
         setLoading(false);
       }
@@ -86,7 +88,7 @@ function EquipmentPage() {
   }
 
   return (
-    <section>
+    <main>
       <h2>Equipment</h2>
 
       <label>
@@ -117,6 +119,7 @@ function EquipmentPage() {
           ))}
         </select>
       </label>
+      {categoryError && <p>{categoryError}</p>}
 
       {equipment.length === 0 && <p>No equipment found.</p>}
 
@@ -130,7 +133,7 @@ function EquipmentPage() {
           status={item.status}
         />
       ))}
-    </section>
+    </main>
   );
 }
 
