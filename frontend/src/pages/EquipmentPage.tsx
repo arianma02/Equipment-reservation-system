@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import EquipmentCard from "../components/EquipmentCard";
-
-type Equipment = {
-  id: number;
-  name: string;
-  asset_tag: string;
-  category_id: number;
-  category_name: string;
-  status: string;
-};
+import type { Equipment } from "../types";
+import { API_URL } from "../config";
 
 type Category = {
   id: number;
@@ -27,10 +20,18 @@ function EquipmentPage() {
 
   useEffect(() => {
     async function loadCategories() {
-      const response = await fetch("http://127.0.0.1:8000/categories");
-      const data = await response.json();
+      try {
+        const response = await fetch(`${API_URL}/categories`);
 
-      setCategories(data);
+        if (!response.ok) {
+          throw new Error("Failed to load categories");
+        }
+
+        const data = await response.json();
+        setCategories(data);
+      } catch {
+        setError("Failed to load categories");
+      }
     }
 
     loadCategories();
@@ -55,8 +56,8 @@ function EquipmentPage() {
         const queryString = params.toString();
 
         const url = queryString
-          ? `http://127.0.0.1:8000/equipment?${queryString}`
-          : "http://127.0.0.1:8000/equipment";
+          ? `${API_URL}/equipment?${queryString}`
+          : `${API_URL}/equipment`;
 
         const response = await fetch(url);
 
