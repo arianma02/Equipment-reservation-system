@@ -5,6 +5,7 @@ import EquipmentDetailPage from "./pages/EquipmentDetailPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import MyReservationsPage from "./pages/MyReservationsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -17,7 +18,14 @@ function App() {
         <Route path="/equipment/:id" element={<EquipmentDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/reservations/me" element={<MyReservationsPage />} />
+        <Route
+          path="/reservations/me"
+          element={
+            <ProtectedRoute>
+              <MyReservationsPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

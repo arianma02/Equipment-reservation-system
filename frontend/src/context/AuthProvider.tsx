@@ -34,6 +34,7 @@ async function fetchCurrentUser(): Promise<User | null> {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   async function refreshUser() {
     const currentUser = await fetchCurrentUser();
@@ -49,13 +50,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadCurrentUser() {
       const currentUser = await fetchCurrentUser();
       setUser(currentUser);
+      setAuthLoading(false);
     }
 
     loadCurrentUser();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, refreshUser, logout }}>
+    <AuthContext.Provider value={{ user, authLoading, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
