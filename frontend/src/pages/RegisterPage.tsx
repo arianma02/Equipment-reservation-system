@@ -1,25 +1,21 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 import { API_URL } from "../config";
+import { useNavigate } from "react-router-dom";
 
-function LoginPage() {
+function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
 
-  const location = useLocation();
-  const registrationMessage = location.state?.message;
-
-  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -30,26 +26,30 @@ function LoginPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Login failed");
+        throw new Error(data.detail || "Registration failed");
       }
 
-      const data = await response.json();
-      localStorage.setItem("access_token", data.access_token);
-      await refreshUser();
-      navigate("/equipment");
-    } catch {
-      setError("Login failed");
+      navigate("/login", {
+        state: { message: "Account registered successfully" },
+        replace: true,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Registration failed");
+      }
     }
   }
 
   return (
     <main>
-      <h2>Login</h2>
+      <h2>Register</h2>
 
-      {registrationMessage && <p>{registrationMessage}</p>}
-
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleRegister}>
         <label>
           Email:
           <input
@@ -68,12 +68,11 @@ function LoginPage() {
           />
         </label>
 
-        <button type="submit">Login</button>
-
+        <button type="submit">Register</button>
         {error && <p>{error}</p>}
       </form>
     </main>
   );
 }
 
-export default LoginPage;
+export default RegisterPage;

@@ -102,13 +102,19 @@ function EquipmentDetailPage() {
         },
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to create reservation");
+        throw new Error(data.detail || "Failed to create reservation");
       }
 
       setReservationMessage("Reservation created");
-    } catch {
-      setReservationMessage("Failed to create reservation");
+    } catch (error) {
+      if (error instanceof Error) {
+        setReservationMessage(error.message);
+      } else {
+        setReservationMessage("Failed to create reservation");
+      }
     } finally {
       setReservationLoading(false);
     }
