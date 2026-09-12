@@ -3,7 +3,7 @@ function Header() {
     <header>
       <h1>Equipment Reservation System</h1>
     </header>
-  )
+  );
 }
 
-export default Header
+export default Header;

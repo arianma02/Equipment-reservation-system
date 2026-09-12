@@ -1,5 +1,5 @@
-import Header from './components/Header'
-import EquipmentPage from './pages/EquipmentPage'
+import Header from "./components/Header";
+import EquipmentPage from "./pages/EquipmentPage";
 
 function App() {
   return (
@@ -7,7 +7,7 @@ function App() {
       <Header />
       <EquipmentPage />
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
