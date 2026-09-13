@@ -100,7 +100,6 @@ function AdminReservationsPage() {
   return (
     <main>
       <h2>Manage Reservations</h2>
-
       {reservations.map((reservation) => (
         <article key={reservation.id}>
           <p>User: {reservation.user_email}</p>
@@ -116,9 +115,9 @@ function AdminReservationsPage() {
               {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
             </button>
           )}
-          {cancelError && <p>{cancelError}</p>}
         </article>
-      ))}
+      ))}{" "}
+      {cancelError && <p>{cancelError}</p>}
     </main>
   );
 }

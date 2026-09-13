@@ -12,7 +12,7 @@ function LoginPage() {
   const { refreshUser } = useAuth();
 
   const location = useLocation();
-  const registrationMessage = location.state?.message;
+  const message = location.state?.message;
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +47,7 @@ function LoginPage() {
     <main>
       <h2>Login</h2>
 
-      {registrationMessage && <p>{registrationMessage}</p>}
+      {message && <p>{message}</p>}
 
       <form onSubmit={handleLogin}>
         <label>
@@ -56,6 +56,7 @@ function LoginPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            required
           />
         </label>
 
@@ -65,6 +66,7 @@ function LoginPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            required
           />
         </label>
 

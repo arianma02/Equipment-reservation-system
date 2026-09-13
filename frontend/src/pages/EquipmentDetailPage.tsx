@@ -114,6 +114,7 @@ function EquipmentDetailPage() {
       }
 
       setReservationMessage("Reservation created");
+      setAvailability(false);
     } catch (error) {
       if (error instanceof Error) {
         setReservationMessage(error.message);
@@ -123,6 +124,19 @@ function EquipmentDetailPage() {
     } finally {
       setReservationLoading(false);
     }
+  }
+  function handleStartDateChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setStartDate(event.target.value);
+    setAvailability(null);
+    setAvailabilityError("");
+    setReservationMessage("");
+  }
+
+  function handleEndDateChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setEndDate(event.target.value);
+    setAvailability(null);
+    setAvailabilityError("");
+    setReservationMessage("");
   }
 
   if (loading) {
@@ -143,20 +157,12 @@ function EquipmentDetailPage() {
 
       <label>
         Start date:
-        <input
-          type="date"
-          value={startDate}
-          onChange={(event) => setStartDate(event.target.value)}
-        />
+        <input type="date" value={startDate} onChange={handleStartDateChange} />
       </label>
 
       <label>
         End date:
-        <input
-          type="date"
-          value={endDate}
-          onChange={(event) => setEndDate(event.target.value)}
-        />
+        <input type="date" value={endDate} onChange={handleEndDateChange} />
       </label>
 
       <button

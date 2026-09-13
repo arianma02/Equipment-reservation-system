@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import EquipmentCard from "../components/EquipmentCard";
-import type { Equipment } from "../types";
+import type { Equipment, Category } from "../types";
 import { API_URL } from "../config";
-
-type Category = {
-  id: number;
-  name: string;
-};
 
 function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -32,7 +27,7 @@ function EquipmentPage() {
         const data = await response.json();
         setCategories(data);
       } catch {
-        setError("Failed to load categories");
+        setCategoryError("Failed to load categories");
       }
     }
 
@@ -70,7 +65,7 @@ function EquipmentPage() {
         const data = await response.json();
         setEquipment(data);
       } catch {
-        setCategoryError("Failed to load categories");
+        setError("Failed to load equipment");
       } finally {
         setLoading(false);
       }

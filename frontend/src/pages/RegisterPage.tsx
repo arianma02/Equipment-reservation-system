@@ -55,6 +55,7 @@ function RegisterPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            required
           />
         </label>
 
@@ -64,6 +65,8 @@ function RegisterPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            required
           />
         </label>
 

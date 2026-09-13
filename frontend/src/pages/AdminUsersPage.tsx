@@ -54,7 +54,7 @@ function AdminUsersPage() {
     setUpdateError("");
 
     if (!token) {
-      setError("You must be logged in");
+      setUpdateError("You must be logged in");
       return;
     }
 

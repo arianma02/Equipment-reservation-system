@@ -211,6 +211,7 @@ function AdminEquipmentPage() {
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            required
           />
         </label>
 
@@ -220,6 +221,7 @@ function AdminEquipmentPage() {
             type="text"
             value={assetTag}
             onChange={(event) => setAssetTag(event.target.value)}
+            required
           />
         </label>
 
@@ -228,6 +230,7 @@ function AdminEquipmentPage() {
           <select
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
+            required
           >
             <option value="">Select a category</option>
 
