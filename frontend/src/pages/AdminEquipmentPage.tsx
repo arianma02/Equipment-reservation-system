@@ -202,123 +202,145 @@ function AdminEquipmentPage() {
     <main>
       <h2>Manage Equipment</h2>
 
-      <h3>Add Equipment</h3>
+      <section className="admin-form-card">
+        <h3>Add Equipment</h3>
 
-      <form onSubmit={createEquipment}>
-        <label>
-          Name:
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-          />
-        </label>
-
-        <label>
-          Asset tag:
-          <input
-            type="text"
-            value={assetTag}
-            onChange={(event) => setAssetTag(event.target.value)}
-            required
-          />
-        </label>
-
-        <label>
-          Category:
-          <select
-            value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
-            required
-          >
-            <option value="">Select a category</option>
-
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <button type="submit" disabled={creating}>
-          {creating ? "Creating..." : "Add Equipment"}
-        </button>
-
-        {createError && <p>{createError}</p>}
-      </form>
-
-      {equipment.map((item) => (
-        <article key={item.id}>
-          {editingId === item.id ? (
-            <form onSubmit={(event) => saveEquipment(event, item.id)}>
-              <label>
-                Name:
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(event) => setEditName(event.target.value)}
-                  required
-                />
-              </label>
-
-              <label>
-                Asset tag:
-                <input
-                  type="text"
-                  value={editAssetTag}
-                  onChange={(event) => setEditAssetTag(event.target.value)}
-                  required
-                />
-              </label>
-
-              <label>
-                Category:
-                <select
-                  value={editCategoryId}
-                  onChange={(event) => setEditCategoryId(event.target.value)}
-                  required
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <button type="submit">Save</button>
-
-              <button type="button" onClick={() => setEditingId(null)}>
-                Cancel
-              </button>
-            </form>
-          ) : (
-            <>
-              <p>Name: {item.name}</p>
-              <p>Asset tag: {item.asset_tag}</p>
-              <p>Category: {item.category_name}</p>
-
-              <button onClick={() => startEditing(item)}>Edit</button>
-            </>
-          )}
+        <form className="form-row" onSubmit={createEquipment}>
+          <label>
+            Name:
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+          </label>
 
           <label>
-            Status:
+            Asset tag:
+            <input
+              type="text"
+              value={assetTag}
+              onChange={(event) => setAssetTag(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Category:
             <select
-              value={item.status}
-              onChange={(event) =>
-                updateEquipment(item.id, { status: event.target.value })
-              }
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+              required
             >
-              <option value="active">Active</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="retired">Retired</option>
+              <option value="">Select a category</option>
+
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </label>
-        </article>
-      ))}
+
+          <button type="submit" disabled={creating}>
+            {creating ? "Creating..." : "Add Equipment"}
+          </button>
+        </form>
+
+        {createError && <p>{createError}</p>}
+      </section>
+
+      <div className="admin-item-list">
+        {equipment.map((item) => (
+          <article className="admin-item-card" key={item.id}>
+            {editingId === item.id ? (
+              <form
+                className="admin-edit-form"
+                onSubmit={(event) => saveEquipment(event, item.id)}
+              >
+                <div className="form-row">
+                  <label>
+                    Name:
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(event) => setEditName(event.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Asset tag:
+                    <input
+                      type="text"
+                      value={editAssetTag}
+                      onChange={(event) => setEditAssetTag(event.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Category:
+                    <select
+                      value={editCategoryId}
+                      onChange={(event) =>
+                        setEditCategoryId(event.target.value)
+                      }
+                      required
+                    >
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="button-row">
+                  <button type="submit">Save</button>
+
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="admin-item-title">{item.name}</p>
+                <p>Asset tag: {item.asset_tag}</p>
+                <p>Category: {item.category_name}</p>
+              </>
+            )}
+
+            <div className="form-row admin-item-actions">
+              {editingId !== item.id && (
+                <button onClick={() => startEditing(item)}>Edit</button>
+              )}
+
+              <label>
+                Status:
+                <select
+                  value={item.status}
+                  onChange={(event) =>
+                    updateEquipment(item.id, { status: event.target.value })
+                  }
+                >
+                  <option value="active">Active</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="retired">Retired</option>
+                </select>
+              </label>
+            </div>
+          </article>
+        ))}
+      </div>
+
       {updateError && <p>{updateError}</p>}
     </main>
   );

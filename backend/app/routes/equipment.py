@@ -68,6 +68,11 @@ def check_availability(equipment_id: int, start_date: date, end_date: date):
         raise HTTPException(
             status_code=400, detail="Start date cannot be after end date"
         )
+    if start_date < date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Start date cannot be in the past",
+        )
 
     with get_connection() as connection:
         with connection.cursor() as cursor:

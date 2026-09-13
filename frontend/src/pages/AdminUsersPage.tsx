@@ -106,37 +106,42 @@ function AdminUsersPage() {
     <main>
       <h2>Manage Users</h2>
 
-      {users.map((user) => (
-        <article key={user.id}>
-          <p>Email: {user.email}</p>
+      <div className="admin-item-list">
+        {users.map((user) => (
+          <article className="admin-item-card" key={user.id}>
+            <p className="admin-item-title">{user.email}</p>
 
-          <label>
-            Role:
-            <select
-              value={user.role}
-              onChange={(event) =>
-                updateUser(user.id, { role: event.target.value })
-              }
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </label>
+            <div className="form-row">
+              <label>
+                Role:
+                <select
+                  value={user.role}
+                  onChange={(event) =>
+                    updateUser(user.id, { role: event.target.value })
+                  }
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
 
-          <label>
-            Status:
-            <select
-              value={user.status}
-              onChange={(event) =>
-                updateUser(user.id, { status: event.target.value })
-              }
-            >
-              <option value="active">Active</option>
-              <option value="disabled">Disabled</option>
-            </select>
-          </label>
-        </article>
-      ))}
+              <label>
+                Status:
+                <select
+                  value={user.status}
+                  onChange={(event) =>
+                    updateUser(user.id, { status: event.target.value })
+                  }
+                >
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </label>
+            </div>
+          </article>
+        ))}
+      </div>
+
       {updateError && <p>{updateError}</p>}
     </main>
   );

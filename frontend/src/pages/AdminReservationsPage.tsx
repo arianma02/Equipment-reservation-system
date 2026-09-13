@@ -100,23 +100,40 @@ function AdminReservationsPage() {
   return (
     <main>
       <h2>Manage Reservations</h2>
-      {reservations.map((reservation) => (
-        <article key={reservation.id}>
-          <p>User: {reservation.user_email}</p>
-          <p>Equipment: {reservation.equipment_name}</p>
-          <p>Start date: {reservation.start_date}</p>
-          <p>End date: {reservation.end_date}</p>
-          <p>Status: {reservation.status}</p>
-          {reservation.status === "active" && (
-            <button
-              onClick={() => cancelReservation(reservation.id)}
-              disabled={cancellingId === reservation.id}
-            >
-              {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
-            </button>
-          )}
-        </article>
-      ))}{" "}
+
+      {reservations.length === 0 ? (
+        <p>No reservations found.</p>
+      ) : (
+        <div className="admin-item-list">
+          {reservations.map((reservation) => (
+            <article className="admin-item-card" key={reservation.id}>
+              <p className="admin-item-title">{reservation.equipment_name}</p>
+
+              <p>User: {reservation.user_email}</p>
+              <p>Start date: {reservation.start_date}</p>
+              <p>End date: {reservation.end_date}</p>
+
+              <p>
+                Status:{" "}
+                <span className={`status-badge status-${reservation.status}`}>
+                  {reservation.status}
+                </span>
+              </p>
+
+              {reservation.status === "active" && (
+                <button
+                  className="danger-button"
+                  onClick={() => cancelReservation(reservation.id)}
+                  disabled={cancellingId === reservation.id}
+                >
+                  {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+
       {cancelError && <p>{cancelError}</p>}
     </main>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { API_URL } from "../config";
 
@@ -9,7 +9,7 @@ function LoginPage() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { refreshUser, user, authLoading } = useAuth();
 
   const location = useLocation();
   const message = location.state?.message;
@@ -42,38 +42,47 @@ function LoginPage() {
       setError("Login failed");
     }
   }
+  if (authLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (user) {
+    return <Navigate to="/equipment" replace />;
+  }
 
   return (
-    <main>
-      <h2>Login</h2>
+    <main className="auth-page">
+      <div className="auth-card">
+        <h2>Login</h2>
 
-      {message && <p>{message}</p>}
+        {message && <p>{message}</p>}
 
-      <form onSubmit={handleLogin}>
-        <label>
-          Email:
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
+        <form className="auth-form" onSubmit={handleLogin}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
 
-        <label>
-          Password:
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
 
-        <button type="submit">Login</button>
+          <button type="submit">Login</button>
 
-        {error && <p>{error}</p>}
-      </form>
+          {error && <p>{error}</p>}
+        </form>
+      </div>
     </main>
   );
 }

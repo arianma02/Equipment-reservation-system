@@ -23,6 +23,8 @@ function EquipmentDetailPage() {
   const [reservationLoading, setReservationLoading] = useState(false);
   const [reservationMessage, setReservationMessage] = useState("");
 
+  const today = new Date().toISOString().split("T")[0];
+
   useEffect(() => {
     async function loadEquipment() {
       setLoading(true);
@@ -114,7 +116,7 @@ function EquipmentDetailPage() {
       }
 
       setReservationMessage("Reservation created");
-      setAvailability(false);
+      setAvailability(null);
     } catch (error) {
       if (error instanceof Error) {
         setReservationMessage(error.message);
@@ -150,48 +152,72 @@ function EquipmentDetailPage() {
   return (
     <main>
       <h2>{equipment.name}</h2>
-      <p>Asset tag: {equipment.asset_tag}</p>
-      <p>Category: {equipment.category_name}</p>
-      <p>Status: {equipment.status}</p>
-      <h3>Check availability</h3>
 
-      <label>
-        Start date:
-        <input type="date" value={startDate} onChange={handleStartDateChange} />
-      </label>
-
-      <label>
-        End date:
-        <input type="date" value={endDate} onChange={handleEndDateChange} />
-      </label>
-
-      <button
-        onClick={checkAvailability}
-        disabled={!startDate || !endDate || availabilityLoading}
-      >
-        {availabilityLoading ? "Checking..." : "Check availability"}
-      </button>
-
-      {availability === true && <p>Available</p>}
-      {availability === false && <p>Not available</p>}
-      {availabilityError && <p>{availabilityError}</p>}
-
-      {user ? (
-        <div>
-          <button
-            onClick={createReservation}
-            disabled={!startDate || !endDate || reservationLoading}
-          >
-            {reservationLoading ? "Reserving..." : "Reserve"}
-          </button>
-
-          {reservationMessage && <p>{reservationMessage}</p>}
+      <section className="equipment-detail-card">
+        <div className="equipment-detail-info">
+          <p>Asset tag: {equipment.asset_tag}</p>
+          <p>Category: {equipment.category_name}</p>
+          <p>Status: {equipment.status}</p>
         </div>
-      ) : (
-        <p>
-          <Link to="/login">Login</Link> to reserve this equipment.
-        </p>
-      )}
+
+        <h3>Check availability</h3>
+
+        <div className="date-fields">
+          <label>
+            Start date
+            <input
+              type="date"
+              value={startDate}
+              min={today}
+              onChange={handleStartDateChange}
+            />
+          </label>
+
+          <label>
+            End date
+            <input
+              type="date"
+              value={endDate}
+              min={today}
+              onChange={handleEndDateChange}
+            />
+          </label>
+        </div>
+
+        <button
+          onClick={checkAvailability}
+          disabled={!startDate || !endDate || availabilityLoading}
+        >
+          {availabilityLoading ? "Checking..." : "Check availability"}
+        </button>
+
+        {availability === true && <p className="success-message">Available</p>}
+
+        {availability === false && (
+          <p className="error-message">Not available</p>
+        )}
+
+        {availabilityError && (
+          <p className="error-message">{availabilityError}</p>
+        )}
+
+        {user ? (
+          <div className="reservation-action">
+            <button
+              onClick={createReservation}
+              disabled={!startDate || !endDate || reservationLoading}
+            >
+              {reservationLoading ? "Reserving..." : "Reserve"}
+            </button>
+
+            {reservationMessage && <p>{reservationMessage}</p>}
+          </div>
+        ) : (
+          <p>
+            <Link to="/login">Login</Link> to reserve this equipment.
+          </p>
+        )}
+      </section>
     </main>
   );
 }

@@ -47,17 +47,20 @@ def test_create_reservation(client):
 
 def test_create_overlapping_reservation_rejected(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                ("Sports",),
             )
             category = cursor.fetchone()
 
@@ -65,22 +68,24 @@ def test_create_overlapping_reservation_rejected(client):
                 "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
                 ("Basketball", "BB-001", category["id"]),
             )
-
             equipment = cursor.fetchone()
 
+    today = date.today()
+
     first_response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-10",
-            "end_date": "2026-09-15",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
+
     second_response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-12",
-            "end_date": "2026-09-14",
+            "start_date": (today + timedelta(days=12)).isoformat(),
+            "end_date": (today + timedelta(days=14)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -94,17 +99,20 @@ def test_create_overlapping_reservation_rejected(client):
 
 def test_create_non_overlapping_reservations(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                ("Sports",),
             )
             category = cursor.fetchone()
 
@@ -112,22 +120,24 @@ def test_create_non_overlapping_reservations(client):
                 "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
                 ("Basketball", "BB-001", category["id"]),
             )
-
             equipment = cursor.fetchone()
 
+    today = date.today()
+
     first_response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-10",
-            "end_date": "2026-09-15",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
+
     second_response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-16",
-            "end_date": "2026-09-20",
+            "start_date": (today + timedelta(days=16)).isoformat(),
+            "end_date": (today + timedelta(days=20)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -182,17 +192,20 @@ def test_create_reservation_equipment_not_found(client):
 
 def test_create_reservation_maintenance_equipment_rejected(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                ("Sports",),
             )
             category = cursor.fetchone()
 
@@ -200,17 +213,19 @@ def test_create_reservation_maintenance_equipment_rejected(client):
                 "INSERT INTO equipment (name, asset_tag, category_id, status) VALUES (%s, %s, %s, %s) RETURNING id;",
                 ("Basketball", "BB-001", category["id"], "maintenance"),
             )
-
             equipment = cursor.fetchone()
 
+    today = date.today()
+
     response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-10",
-            "end_date": "2026-09-15",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
+
     assert response.status_code == 409
     assert response.json() == {"detail": "Equipment is not available for reservation"}
 
@@ -315,8 +330,8 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
             "start_date": (date.today() + timedelta(days=1)).isoformat(),
             "end_date": (date.today() + timedelta(days=5)).isoformat(),
             "status": "active",
-    }
-]
+        }
+    ]
 
 
 def test_get_my_reservations_empty(client):
@@ -871,3 +886,109 @@ def test_admin_sees_past_reservation_as_completed(client):
 
     assert response.status_code == 200
     assert response.json()[0]["status"] == "completed"
+
+
+def test_availability_rejects_past_start_date(client):
+    response = client.get(
+        "/equipment/1/availability",
+        params={
+            "start_date": "2020-01-01",
+            "end_date": "2020-01-02",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Start date cannot be in the past"
+
+
+def test_create_reservation_rejects_past_start_date(client):
+    client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    today = date.today()
+
+    response = client.post(
+        f"/equipment/{equipment['id']}/reservations",
+        json={
+            "start_date": (today - timedelta(days=2)).isoformat(),
+            "end_date": (today - timedelta(days=1)).isoformat(),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Start date cannot be in the past"}
+
+
+def test_create_reservation_allows_start_date_today(client):
+    client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    today = date.today()
+
+    response = client.post(
+        f"/equipment/{equipment['id']}/reservations",
+        json={
+            "start_date": today.isoformat(),
+            "end_date": today.isoformat(),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["equipment_id"] == equipment["id"]
+    assert response.json()["start_date"] == today.isoformat()
+    assert response.json()["end_date"] == today.isoformat()
+    assert response.json()["status"] == "active"

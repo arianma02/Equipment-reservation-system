@@ -64,15 +64,21 @@ function AccountPage() {
     <main>
       <h2>My Account</h2>
 
-      <p>Email: {user?.email}</p>
-      <p>Role: {user?.role}</p>
-      <p>Status: {user?.status}</p>
+      <section className="account-card">
+        <p>Email: {user?.email}</p>
+        <p>Role: {user?.role}</p>
+        <p>Status: {user?.status}</p>
 
-      <button onClick={deactivateAccount} disabled={deactivating}>
-        {deactivating ? "Deactivating..." : "Deactivate Account"}
-      </button>
+        <button
+          className="danger-button"
+          onClick={deactivateAccount}
+          disabled={deactivating}
+        >
+          {deactivating ? "Deactivating..." : "Deactivate Account"}
+        </button>
 
-      {error && <p>{error}</p>}
+        {error && <p>{error}</p>}
+      </section>
     </main>
   );
 }

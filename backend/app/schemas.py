@@ -56,6 +56,7 @@ class ReservationResponse(BaseModel):
     end_date: date
     status: str
 
+
 class UserReservationResponse(BaseModel):
     id: int
     user_id: int

@@ -105,25 +105,36 @@ function MyReservationsPage() {
     <main>
       <h2>My Reservations</h2>
 
-      {reservations.length === 0 && <p>No reservations found.</p>}
+      {reservations.length === 0 ? (
+        <p>No reservations found.</p>
+      ) : (
+        <div className="reservation-list">
+          {reservations.map((reservation) => (
+            <article className="reservation-card" key={reservation.id}>
+              <h3>{reservation.equipment_name}</h3>
 
-      {reservations.map((reservation) => (
-        <article key={reservation.id}>
-          <p>Equipment: {reservation.equipment_name}</p>
-          <p>Start: {reservation.start_date}</p>
-          <p>End: {reservation.end_date}</p>
-          <p>Status: {reservation.status}</p>
+              <p>Start: {reservation.start_date}</p>
+              <p>End: {reservation.end_date}</p>
+              <p>
+                Status:{" "}
+                <span className={`status-badge status-${reservation.status}`}>
+                  {reservation.status}
+                </span>
+              </p>
 
-          {reservation.status === "active" && (
-            <button
-              onClick={() => cancelReservation(reservation.id)}
-              disabled={cancellingId === reservation.id}
-            >
-              {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
-            </button>
-          )}
-        </article>
-      ))}
+              {reservation.status === "active" && (
+                <button
+                  className="danger-button"
+                  onClick={() => cancelReservation(reservation.id)}
+                  disabled={cancellingId === reservation.id}
+                >
+                  {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
 
       {cancelError && <p>{cancelError}</p>}
     </main>

@@ -16,7 +16,7 @@ function EquipmentCard({
   status,
 }: EquipmentCardProps) {
   return (
-    <article>
+    <article className="equipment-card">
       <h2>
         <Link to={`/equipment/${id}`}>{name}</Link>
       </h2>

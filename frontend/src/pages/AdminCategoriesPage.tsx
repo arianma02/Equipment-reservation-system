@@ -190,56 +190,78 @@ function AdminCategoriesPage() {
     <main>
       <h2>Manage Categories</h2>
 
-      <h3>Add Category</h3>
+      <section className="admin-form-card">
+        <h3>Add Category</h3>
 
-      <form onSubmit={createCategory}>
-        <label>
-          Name:
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-          />
-        </label>
+        <form className="form-row" onSubmit={createCategory}>
+          <label>
+            Name:
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+          </label>
 
-        <button type="submit" disabled={creating}>
-          {creating ? "Creating..." : "Add Category"}
-        </button>
+          <button type="submit" disabled={creating}>
+            {creating ? "Creating..." : "Add Category"}
+          </button>
+        </form>
 
         {createError && <p>{createError}</p>}
-      </form>
+      </section>
 
-      {categories.map((category) => (
-        <article key={category.id}>
-          {editingId === category.id ? (
-            <form onSubmit={(event) => updateCategory(event, category.id)}>
-              <input
-                type="text"
-                value={editName}
-                onChange={(event) => setEditName(event.target.value)}
-                required
-              />
+      <div className="admin-item-list">
+        {categories.map((category) => (
+          <article className="admin-item-card" key={category.id}>
+            {editingId === category.id ? (
+              <form
+                className="admin-edit-form"
+                onSubmit={(event) => updateCategory(event, category.id)}
+              >
+                <label>
+                  Name:
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(event) => setEditName(event.target.value)}
+                    required
+                  />
+                </label>
 
-              <button type="submit">Save</button>
+                <div className="button-row">
+                  <button type="submit">Save</button>
 
-              <button type="button" onClick={() => setEditingId(null)}>
-                Cancel
-              </button>
-            </form>
-          ) : (
-            <>
-              <p>{category.name}</p>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="admin-item-title">{category.name}</p>
 
-              <button onClick={() => startEditing(category)}>Edit</button>
+                <div className="button-row">
+                  <button onClick={() => startEditing(category)}>Edit</button>
 
-              <button onClick={() => deleteCategory(category.id)}>
-                Delete
-              </button>
-            </>
-          )}
-        </article>
-      ))}
+                  <button
+                    className="danger-button"
+                    onClick={() => deleteCategory(category.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+          </article>
+        ))}
+      </div>
+
       {deleteError && <p>{deleteError}</p>}
       {updateError && <p>{updateError}</p>}
     </main>

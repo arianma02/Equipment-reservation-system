@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import get_connection
 from app.dependencies import get_current_user, get_current_admin
-from app.schemas import ReservationCreate, ReservationResponse, UserReservationResponse, AdminReservationResponse
+from app.schemas import (
+    ReservationCreate,
+    ReservationResponse,
+    UserReservationResponse,
+    AdminReservationResponse,
+)
 
 from datetime import date
 
@@ -22,6 +27,11 @@ def create_reservation(
     if reservation.start_date > reservation.end_date:
         raise HTTPException(
             status_code=400, detail="Start date cannot be after end date"
+        )
+    if reservation.start_date < date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Start date cannot be in the past",
         )
     with get_connection() as connection:
         with connection.cursor() as cursor:

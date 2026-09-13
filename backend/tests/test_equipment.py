@@ -1072,3 +1072,69 @@ def test_admin_cannot_set_invalid_equipment_status(client):
     )
 
     assert response.status_code == 422
+
+
+def test_availability_rejects_past_start_date(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+    today = date.today()
+
+    response = client.get(
+        f"/equipment/{equipment['id']}/availability",
+        params={
+            "start_date": (today - timedelta(days=2)).isoformat(),
+            "end_date": (today - timedelta(days=1)).isoformat(),
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Start date cannot be in the past"}
+
+
+def test_availability_allows_start_date_today(client):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+    today = date.today()
+
+    response = client.get(
+        f"/equipment/{equipment['id']}/availability",
+        params={
+            "start_date": today.isoformat(),
+            "end_date": today.isoformat(),
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"available": True}

@@ -74,60 +74,65 @@ function EquipmentPage() {
     loadEquipment();
   }, [statusFilter, categoryFilter]);
 
-  if (loading) {
-    return <p>Loading equipment...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
   return (
     <main>
       <h2>Equipment</h2>
 
-      <label>
-        Status:
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-        >
-          <option value="">All</option>
-          <option value="active">Active</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="retired">Retired</option>
-        </select>
-      </label>
+      <div className="form-row">
+        <label>
+          Status:
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="">All</option>
+            <option value="active">Active</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="retired">Retired</option>
+          </select>
+        </label>
 
-      <label>
-        Category:
-        <select
-          value={categoryFilter}
-          onChange={(event) => setCategoryFilter(event.target.value)}
-        >
-          <option value="">All</option>
+        <label>
+          Category:
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+          >
+            <option value="">All</option>
 
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </label>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {categoryError && <p>{categoryError}</p>}
 
-      {equipment.length === 0 && <p>No equipment found.</p>}
-
-      {equipment.map((item) => (
-        <EquipmentCard
-          key={item.id}
-          id={item.id}
-          name={item.name}
-          assetTag={item.asset_tag}
-          categoryName={item.category_name}
-          status={item.status}
-        />
-      ))}
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : equipment.length === 0 ? (
+        <p className="empty-message">
+          No equipment matches the selected filters.
+        </p>
+      ) : (
+        <div className="equipment-grid">
+          {equipment.map((item) => (
+            <EquipmentCard
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              assetTag={item.asset_tag}
+              categoryName={item.category_name}
+              status={item.status}
+            />
+          ))}
+        </div>
+      )}
     </main>
   );
 }

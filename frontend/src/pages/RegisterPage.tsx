@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config";
+import { useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,7 @@ function RegisterPage() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { user, authLoading } = useAuth();
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,37 +45,46 @@ function RegisterPage() {
       }
     }
   }
+  if (authLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (user) {
+    return <Navigate to="/equipment" replace />;
+  }
 
   return (
-    <main>
-      <h2>Register</h2>
+    <main className="auth-page">
+      <div className="auth-card">
+        <h2>Register</h2>
 
-      <form onSubmit={handleRegister}>
-        <label>
-          Email:
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
+        <form className="auth-form" onSubmit={handleRegister}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
 
-        <label>
-          Password:
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={8}
-            required
-          />
-        </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
 
-        <button type="submit">Register</button>
+          <button type="submit">Register</button>
 
-        {error && <p>{error}</p>}
-      </form>
+          {error && <p>{error}</p>}
+        </form>
+      </div>
     </main>
   );
 }
