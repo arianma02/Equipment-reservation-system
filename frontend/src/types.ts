@@ -23,3 +23,19 @@ export type Reservation = {
   end_date: string;
   status: string;
 };
+
+export type Category = {
+  id: number;
+  name: string;
+};
+
+export type AdminReservation = {
+  id: number;
+  user_id: number;
+  user_email: string;
+  equipment_id: number;
+  equipment_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+};

@@ -12,8 +12,10 @@ function Header() {
 
       {user ? (
         <div>
-          <Link to="/reservations/me">My Reservations</Link>ss
+          <Link to="/reservations/me">My Reservations</Link>
           <Link to="/account">My Account</Link>
+
+          {user.role === "admin" && <Link to="/admin">Admin</Link>}
           <p>Logged in as {user.email}</p>
           <button onClick={logout}>Logout</button>
         </div>
