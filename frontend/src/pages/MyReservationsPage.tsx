@@ -94,11 +94,19 @@ function MyReservationsPage() {
   }
 
   if (loading) {
-    return <p>Loading reservations...</p>;
+    return (
+      <main>
+        <p>Loading reservations...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <main>
+        <p>{error}</p>
+      </main>
+    );
   }
 
   return (

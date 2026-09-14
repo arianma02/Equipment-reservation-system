@@ -101,11 +101,19 @@ function AdminUsersPage() {
   }
 
   if (loading) {
-    return <p>Loading users...</p>;
+    return (
+      <main>
+        <p>Loading users...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <main>
+        <p>{error}</p>
+      </main>
+    );
   }
 
   return (

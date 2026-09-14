@@ -10,7 +10,11 @@ function AdminRoute({ children }: AdminRouteProps) {
   const { user, authLoading } = useAuth();
 
   if (authLoading) {
-    return <p>Loading...</p>;
+    return (
+      <main>
+        <p>Loading...</p>
+      </main>
+    );
   }
 
   if (!user) {

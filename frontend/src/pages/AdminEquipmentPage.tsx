@@ -191,11 +191,19 @@ function AdminEquipmentPage() {
     }
   }
   if (loading) {
-    return <p>Loading equipment...</p>;
+    return (
+      <main>
+        <p>Loading equipment...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <main>
+        <p>{error}</p>
+      </main>
+    );
   }
 
   return (

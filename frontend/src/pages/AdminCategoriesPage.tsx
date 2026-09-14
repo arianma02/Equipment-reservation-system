@@ -179,11 +179,19 @@ function AdminCategoriesPage() {
     }
   }
   if (loading) {
-    return <p>Loading categories...</p>;
+    return (
+      <main>
+        <p>Loading categories...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <main>
+        <p>{error}</p>
+      </main>
+    );
   }
 
   return (

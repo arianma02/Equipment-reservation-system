@@ -142,11 +142,19 @@ function EquipmentDetailPage() {
   }
 
   if (loading) {
-    return <p>Loading equipment...</p>;
+    return (
+      <main>
+        <p>Loading equipment...</p>
+      </main>
+    );
   }
 
   if (error || !equipment) {
-    return <p>Failed to load equipment</p>;
+    return (
+      <main>
+        <p>Failed to load equipment</p>
+      </main>
+    );
   }
 
   return (
