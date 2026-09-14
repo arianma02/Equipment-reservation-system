@@ -43,7 +43,11 @@ function LoginPage() {
     }
   }
   if (authLoading) {
-    return <p>Loading...</p>;
+    return (
+      <main>
+        <p>Loading...</p>
+      </main>
+    );
   }
 
   if (user) {
