@@ -15,19 +15,27 @@ from alembic import context
 config = context.config
 load_dotenv()
 
-database_url = URL.create(
-    drivername="postgresql+psycopg",
-    username=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    host=os.getenv("DB_HOST"),
-    port=int(os.getenv("DB_PORT")),
-    database=os.getenv("DB_NAME"),
-)
+database_url = os.getenv("DATABASE_URL")
 
-config.set_main_option(
-    "sqlalchemy.url",
-    database_url.render_as_string(hide_password=False).replace("%", "%%"),
-)
+if database_url:
+    config.set_main_option(
+        "sqlalchemy.url",
+        database_url.replace("%", "%%"),
+    )
+else:
+    local_database_url = URL.create(
+        drivername="postgresql+psycopg",
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        database=os.getenv("DB_NAME"),
+    )
+
+    config.set_main_option(
+        "sqlalchemy.url",
+        local_database_url.render_as_string(hide_password=False).replace("%", "%%"),
+    )
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
