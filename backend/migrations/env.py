@@ -18,10 +18,18 @@ load_dotenv()
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1,
+        )
+
     config.set_main_option(
         "sqlalchemy.url",
         database_url.replace("%", "%%"),
     )
+    
 else:
     local_database_url = URL.create(
         drivername="postgresql+psycopg",
