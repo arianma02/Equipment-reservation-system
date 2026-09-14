@@ -11,7 +11,12 @@ def test_get_categories(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s), (%s);",
+                """
+                INSERT INTO categories (name)
+                VALUES
+                    (%s),
+                    (%s)
+                """,
                 ("Sports", "Cameras"),
             )
 
@@ -32,7 +37,11 @@ def test_admin_can_create_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -95,12 +104,19 @@ def test_admin_cannot_create_duplicate_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s)",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                """,
                 ("Sports",),
             )
 
@@ -129,7 +145,11 @@ def test_create_category_requires_name(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -157,12 +177,20 @@ def test_admin_can_update_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -195,7 +223,11 @@ def test_normal_user_cannot_update_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -234,7 +266,11 @@ def test_admin_gets_404_when_updating_missing_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -263,18 +299,29 @@ def test_admin_cannot_rename_category_to_existing_name(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             sports = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s)",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                """,
                 ("Training",),
             )
 
@@ -303,12 +350,20 @@ def test_update_category_requires_name(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -337,12 +392,20 @@ def test_admin_can_delete_unused_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -370,7 +433,11 @@ def test_normal_user_cannot_delete_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -405,7 +472,11 @@ def test_admin_gets_404_when_deleting_missing_category(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -433,12 +504,20 @@ def test_admin_cannot_delete_category_in_use(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()

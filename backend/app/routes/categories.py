@@ -12,7 +12,11 @@ router = APIRouter()
 def get_categories():
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, name FROM categories ORDER BY name")
+            cursor.execute("""
+                SELECT id, name
+                FROM categories
+                ORDER BY name
+                """)
             categories = cursor.fetchall()
     return categories
 

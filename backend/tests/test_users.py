@@ -1,5 +1,6 @@
 from app.database import get_connection
-from datetime import date, timedelta
+from datetime import timedelta
+from app.time_utils import utc_today
 
 
 def test_user_can_deactivate_own_account(client):
@@ -17,7 +18,11 @@ def test_user_can_deactivate_own_account(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -31,6 +36,8 @@ def test_user_can_deactivate_own_account(client):
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
+
+            today = utc_today()
 
             cursor.execute(
                 """
@@ -46,8 +53,8 @@ def test_user_can_deactivate_own_account(client):
                 (
                     user["id"],
                     equipment["id"],
-                    "2090-09-10",
-                    "2090-09-15",
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
                 ),
             )
             reservation = cursor.fetchone()
@@ -63,7 +70,11 @@ def test_user_can_deactivate_own_account(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM reservations WHERE id = %s",
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
                 (reservation["id"],),
             )
             updated_reservation = cursor.fetchone()
@@ -86,7 +97,11 @@ def test_deactivation_keeps_past_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -100,6 +115,8 @@ def test_deactivation_keeps_past_reservations(client):
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
+
+            today = utc_today()
 
             cursor.execute(
                 """
@@ -115,8 +132,8 @@ def test_deactivation_keeps_past_reservations(client):
                 (
                     user["id"],
                     equipment["id"],
-                    "2026-09-02",
-                    "2026-09-05",
+                    today - timedelta(days=5),
+                    today - timedelta(days=2),
                 ),
             )
             reservation = cursor.fetchone()
@@ -131,7 +148,11 @@ def test_deactivation_keeps_past_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM reservations WHERE id = %s",
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
                 (reservation["id"],),
             )
             updated_reservation = cursor.fetchone()
@@ -154,7 +175,11 @@ def test_last_active_admin_cannot_deactivate_self(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -175,7 +200,11 @@ def test_last_active_admin_cannot_deactivate_self(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM users WHERE id = %s",
+                """
+                SELECT status
+                FROM users
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
             updated_admin = cursor.fetchone()
@@ -234,7 +263,11 @@ def test_admin_can_get_users(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -306,7 +339,11 @@ def test_admin_can_disable_user(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -337,7 +374,11 @@ def test_cannot_disable_last_active_admin(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -405,7 +446,11 @@ def test_cannot_demote_last_active_admin(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -478,12 +523,20 @@ def test_disabling_user_cancels_future_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -512,8 +565,8 @@ def test_disabling_user_cancels_future_reservations(client):
                 (
                     target_user["id"],
                     equipment["id"],
-                    date.today() + timedelta(days=1),
-                    date.today() + timedelta(days=3),
+                    utc_today() + timedelta(days=1),
+                    utc_today() + timedelta(days=3),
                 ),
             )
             reservation = cursor.fetchone()
@@ -535,7 +588,11 @@ def test_disabling_user_cancels_future_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM reservations WHERE id = %s",
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
                 (reservation["id"],),
             )
             updated_reservation = cursor.fetchone()
@@ -557,12 +614,20 @@ def test_disabling_user_keeps_past_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -591,8 +656,8 @@ def test_disabling_user_keeps_past_reservations(client):
                 (
                     target_user["id"],
                     equipment["id"],
-                    date.today() - timedelta(days=5),
-                    date.today() - timedelta(days=2),
+                    utc_today() - timedelta(days=5),
+                    utc_today() - timedelta(days=2),
                 ),
             )
             reservation = cursor.fetchone()
@@ -614,7 +679,11 @@ def test_disabling_user_keeps_past_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM reservations WHERE id = %s",
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
                 (reservation["id"],),
             )
             updated_reservation = cursor.fetchone()
@@ -658,7 +727,11 @@ def test_admin_gets_404_when_updating_missing_user(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -692,7 +765,11 @@ def test_admin_can_promote_user_to_admin(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -727,7 +804,11 @@ def test_admin_cannot_set_invalid_role(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -760,7 +841,11 @@ def test_admin_cannot_set_invalid_status(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
@@ -777,3 +862,224 @@ def test_admin_cannot_set_invalid_status(client):
     )
 
     assert response.status_code == 422
+
+
+def test_disabling_user_cancels_in_progress_reservation(client):
+    admin = client.post(
+        "/register",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    ).json()
+
+    target_user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
+                (admin["id"],),
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    target_user["id"],
+                    equipment["id"],
+                    utc_today() - timedelta(days=2),
+                    utc_today() + timedelta(days=2),
+                ),
+            )
+            reservation = cursor.fetchone()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    response = client.patch(
+        f"/users/{target_user['id']}",
+        json={"status": "disabled"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
+                (reservation["id"],),
+            )
+            updated_reservation = cursor.fetchone()
+
+    assert updated_reservation["status"] == "cancelled"
+
+
+def test_deactivation_cancels_in_progress_reservation(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    user["id"],
+                    equipment["id"],
+                    utc_today() - timedelta(days=2),
+                    utc_today() + timedelta(days=2),
+                ),
+            )
+            reservation = cursor.fetchone()
+
+    response = client.patch(
+        "/users/me/deactivate",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT status
+                FROM reservations
+                WHERE id = %s
+                """,
+                (reservation["id"],),
+            )
+            updated_reservation = cursor.fetchone()
+
+    assert updated_reservation["status"] == "cancelled"
+
+
+def test_admin_can_reenable_disabled_user(client):
+    admin = client.post(
+        "/register",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    ).json()
+
+    target_user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
+                (admin["id"],),
+            )
+
+    login_response = client.post(
+        "/login",
+        json={"email": "admin@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    disable_response = client.patch(
+        f"/users/{target_user['id']}",
+        json={"status": "disabled"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert disable_response.status_code == 200
+    assert disable_response.json()["status"] == "disabled"
+
+    enable_response = client.patch(
+        f"/users/{target_user['id']}",
+        json={"status": "active"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert enable_response.status_code == 200
+    assert enable_response.json()["status"] == "active"
+
+    user_login = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+
+    assert user_login.status_code == 200

@@ -78,7 +78,11 @@ def test_disabled_user_login(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET status = 'disabled' WHERE email = %s",
+                """
+                UPDATE users
+                SET status = 'disabled'
+                WHERE email = %s
+                """,
                 ("test@example.com",),
             )
 
@@ -131,9 +135,27 @@ def test_get_me_with_disabled_user(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET status = 'disabled' WHERE email = %s",
+                """
+                UPDATE users
+                SET status = 'disabled'
+                WHERE email = %s
+                """,
                 ("test@example.com",),
             )
     response = client.get("/me", headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 403
     assert response.json() == {"detail": "Account is disabled"}
+
+
+def test_registration_cannot_create_admin(client):
+    response = client.post(
+        "/register",
+        json={
+            "email": "user@example.com",
+            "password": "testpassword",
+            "role": "admin",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["role"] == "user"

@@ -1,10 +1,37 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, BeforeValidator, StringConstraints
 from datetime import date
-from typing import Literal
+from typing import Literal, Annotated
+
+
+def normalize_email(value: str) -> str:
+    return str(value).strip().lower()
+
+
+NormalizedEmail = Annotated[
+    EmailStr,
+    BeforeValidator(normalize_email),
+]
+
+NonEmptyText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+    ),
+]
+
+AssetTag = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        to_upper=True,
+    ),
+]
 
 
 class UserRegister(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(min_length=8)
 
 
@@ -16,7 +43,7 @@ class UserResponse(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str
 
 
@@ -84,21 +111,21 @@ class AdminReservationResponse(BaseModel):
 
 
 class EquipmentCreate(BaseModel):
-    name: str
-    asset_tag: str
+    name: NonEmptyText
+    asset_tag: AssetTag
     category_id: int
 
 
 class EquipmentUpdate(BaseModel):
-    name: str | None = None
-    asset_tag: str | None = None
+    name: NonEmptyText | None = None
+    asset_tag: AssetTag | None = None
     category_id: int | None = None
     status: Literal["active", "maintenance", "retired"] | None = None
 
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: NonEmptyText
 
 
 class CategoryUpdate(BaseModel):
-    name: str
+    name: NonEmptyText

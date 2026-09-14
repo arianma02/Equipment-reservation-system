@@ -13,6 +13,7 @@ def get_connection():
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST"),
         port=os.getenv("DB_PORT"),
+        options="-c timezone=UTC",
         row_factory=dict_row,
     )
     return connection

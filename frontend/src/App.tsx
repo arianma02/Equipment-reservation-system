@@ -87,6 +87,7 @@ function App() {
             </AdminRoute>
           }
         />
+        <Route path="*" element={<Navigate to="/equipment" replace />} />
       </Routes>
     </>
   );

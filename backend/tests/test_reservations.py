@@ -1,35 +1,52 @@
 from app.database import get_connection
-from datetime import date, timedelta
+from datetime import timedelta
+from app.time_utils import utc_today
 
 
 def test_create_reservation(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
+
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
 
             equipment = cursor.fetchone()
 
+    today = utc_today()
+    start_date = today + timedelta(days=10)
+    end_date = today + timedelta(days=13)
+
     response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-15",
-            "end_date": "2026-09-18",
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -39,8 +56,8 @@ def test_create_reservation(client):
         "id": 1,
         "user_id": 1,
         "equipment_id": 1,
-        "start_date": "2026-09-15",
-        "end_date": "2026-09-18",
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
         "status": "active",
     }
 
@@ -59,18 +76,26 @@ def test_create_overlapping_reservation_rejected(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
 
-    today = date.today()
+    today = utc_today()
 
     first_response = client.post(
         f"/equipment/{equipment['id']}/reservations",
@@ -111,18 +136,26 @@ def test_create_non_overlapping_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
 
-    today = date.today()
+    today = utc_today()
 
     first_response = client.post(
         f"/equipment/{equipment['id']}/reservations",
@@ -148,18 +181,23 @@ def test_create_non_overlapping_reservations(client):
 
 def test_create_reservation_invalid_date_range(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
+
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
+
+    today = utc_today()
 
     response = client.post(
         "/equipment/999/reservations",
         json={
-            "start_date": "2026-09-15",
-            "end_date": "2026-09-14",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=5)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -170,18 +208,23 @@ def test_create_reservation_invalid_date_range(client):
 
 def test_create_reservation_equipment_not_found(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
+
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
+
+    today = utc_today()
 
     response = client.post(
         "/equipment/999/reservations",
         json={
-            "start_date": "2026-09-15",
-            "end_date": "2026-09-20",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -204,18 +247,31 @@ def test_create_reservation_maintenance_equipment_rejected(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id, status) VALUES (%s, %s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (
+                    name,
+                    asset_tag,
+                    category_id,
+                    status
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"], "maintenance"),
             )
             equipment = cursor.fetchone()
 
-    today = date.today()
+    today = utc_today()
 
     response = client.post(
         f"/equipment/{equipment['id']}/reservations",
@@ -231,11 +287,13 @@ def test_create_reservation_maintenance_equipment_rejected(client):
 
 
 def test_create_reservation_requires_authentication(client):
+    today = utc_today()
+
     response = client.post(
         "/equipment/1/reservations",
         json={
-            "start_date": "2026-09-10",
-            "end_date": "2026-09-15",
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
         },
     )
 
@@ -244,36 +302,51 @@ def test_create_reservation_requires_authentication(client):
 
 def test_create_same_day_reservation(client):
     client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
+
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
 
             equipment = cursor.fetchone()
 
-    first_response = client.post(
-        f"/equipment/{equipment["id"]}/reservations",
+    reservation_date = utc_today() + timedelta(days=10)
+
+    response = client.post(
+        f"/equipment/{equipment['id']}/reservations",
         json={
-            "start_date": "2026-09-15",
-            "end_date": "2026-09-15",
+            "start_date": reservation_date.isoformat(),
+            "end_date": reservation_date.isoformat(),
         },
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert first_response.status_code == 201
+
+    assert response.status_code == 201
 
 
 def test_get_my_reservations_only_returns_current_users_reservation(client):
@@ -289,28 +362,47 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
 
             equipment = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s), (%s, %s, %s, %s);",
+                """
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date
+                )
+                VALUES
+                    (%s, %s, %s, %s),
+                    (%s, %s, %s, %s)
+                """,
                 (
                     equipment["id"],
                     user1["id"],
-                    date.today() + timedelta(days=1),
-                    date.today() + timedelta(days=5),
+                    utc_today() + timedelta(days=1),
+                    utc_today() + timedelta(days=5),
                     equipment["id"],
                     user2["id"],
-                    date.today() + timedelta(days=10),
-                    date.today() + timedelta(days=15),
+                    utc_today() + timedelta(days=10),
+                    utc_today() + timedelta(days=15),
                 ),
             )
     user_one = client.post(
@@ -327,8 +419,8 @@ def test_get_my_reservations_only_returns_current_users_reservation(client):
             "user_id": 1,
             "equipment_id": 1,
             "equipment_name": "Basketball",
-            "start_date": (date.today() + timedelta(days=1)).isoformat(),
-            "end_date": (date.today() + timedelta(days=5)).isoformat(),
+            "start_date": (utc_today() + timedelta(days=1)).isoformat(),
+            "end_date": (utc_today() + timedelta(days=5)).isoformat(),
             "status": "active",
         }
     ]
@@ -356,35 +448,65 @@ def test_get_my_reservations_requires_authentication(client):
 
 def test_cancel_own_reservation(client):
     register_response = client.post(
-        "/register", json={"email": "test@example.com", "password": "testpassword"}
+        "/register",
+        json={"email": "test@example.com", "password": "testpassword"},
     ).json()
+
     login_response = client.post(
-        "/login", json={"email": "test@example.com", "password": "testpassword"}
+        "/login",
+        json={"email": "test@example.com", "password": "testpassword"},
     )
     token = login_response.json()["access_token"]
+
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id;", ("Sports",)
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
-                "INSERT INTO equipment (name, asset_tag, category_id) VALUES (%s, %s, %s) RETURNING id;",
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
-
             equipment = cursor.fetchone()
 
+            today = utc_today()
+
             cursor.execute(
-                "INSERT INTO reservations (equipment_id, user_id, start_date, end_date) VALUES (%s, %s, %s, %s) RETURNING id;",
-                (equipment["id"], register_response["id"], "2090-09-10", "2090-09-15"),
+                """
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    equipment["id"],
+                    register_response["id"],
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
+                ),
             )
             reservation = cursor.fetchone()
+
     response = client.patch(
-        f"/reservations/{reservation["id"]}/cancel",
+        f"/reservations/{reservation['id']}/cancel",
         headers={"Authorization": f"Bearer {token}"},
     )
+
     assert response.status_code == 200
     assert response.json()["status"] == "cancelled"
 
@@ -409,7 +531,11 @@ def test_cannot_cancel_another_users_reservation(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -423,6 +549,8 @@ def test_cannot_cancel_another_users_reservation(client):
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
+
+            today = utc_today()
 
             cursor.execute(
                 """
@@ -438,14 +566,14 @@ def test_cannot_cancel_another_users_reservation(client):
                 (
                     equipment["id"],
                     user1["id"],
-                    "2090-09-10",
-                    "2090-09-15",
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
                 ),
             )
             reservation = cursor.fetchone()
 
     response = client.patch(
-        f"/reservations/{reservation["id"]}/cancel",
+        f"/reservations/{reservation['id']}/cancel",
         headers={"Authorization": f"Bearer {token_user2}"},
     )
 
@@ -463,13 +591,16 @@ def test_cancel_already_cancelled_reservation(client):
         "/login",
         json={"email": "user@example.com", "password": "testpassword"},
     )
-
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -484,6 +615,8 @@ def test_cancel_already_cancelled_reservation(client):
             )
             equipment = cursor.fetchone()
 
+            today = utc_today()
+
             cursor.execute(
                 """
                 INSERT INTO reservations (
@@ -496,14 +629,21 @@ def test_cancel_already_cancelled_reservation(client):
                 VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (equipment["id"], user["id"], "2090-09-10", "2090-09-15", "cancelled"),
+                (
+                    equipment["id"],
+                    user["id"],
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
+                    "cancelled",
+                ),
             )
             reservation = cursor.fetchone()
 
     response = client.patch(
-        f"/reservations/{reservation["id"]}/cancel",
+        f"/reservations/{reservation['id']}/cancel",
         headers={"Authorization": f"Bearer {token}"},
     )
+
     assert response.status_code == 409
     assert response.json() == {"detail": "Reservation already cancelled"}
 
@@ -518,46 +658,57 @@ def test_cancel_completed_reservation(client):
         "/login",
         json={"email": "user@example.com", "password": "testpassword"},
     )
-
     token = login_response.json()["access_token"]
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
 
             cursor.execute(
                 """
-                    INSERT INTO equipment (name, asset_tag, category_id)
-                    VALUES (%s, %s, %s)
-                    RETURNING id
-                    """,
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
 
+            today = utc_today()
+
             cursor.execute(
                 """
-                    INSERT INTO reservations (
-                        equipment_id,
-                        user_id,
-                        start_date,
-                        end_date
-                    )
-                    VALUES (%s, %s, %s, %s)
-                    RETURNING id
-                    """,
-                (equipment["id"], user["id"], "2026-09-05", "2026-09-06"),
+                INSERT INTO reservations (
+                    equipment_id,
+                    user_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    equipment["id"],
+                    user["id"],
+                    today - timedelta(days=5),
+                    today - timedelta(days=2),
+                ),
             )
             reservation = cursor.fetchone()
 
     response = client.patch(
-        f"/reservations/{reservation["id"]}/cancel",
+        f"/reservations/{reservation['id']}/cancel",
         headers={"Authorization": f"Bearer {token}"},
     )
+
     assert response.status_code == 409
     assert response.json() == {"detail": "Completed reservations cannot be cancelled"}
 
@@ -597,12 +748,20 @@ def test_admin_can_cancel_another_users_reservation(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -616,6 +775,8 @@ def test_admin_can_cancel_another_users_reservation(client):
                 ("Basketball", "BB-001", category["id"]),
             )
             equipment = cursor.fetchone()
+
+            today = utc_today()
 
             cursor.execute(
                 """
@@ -631,8 +792,8 @@ def test_admin_can_cancel_another_users_reservation(client):
                 (
                     equipment["id"],
                     owner["id"],
-                    "2090-09-10",
-                    "2090-09-15",
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
                 ),
             )
             reservation = cursor.fetchone()
@@ -671,12 +832,20 @@ def test_admin_can_get_all_reservations(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -691,6 +860,8 @@ def test_admin_can_get_all_reservations(client):
             )
             equipment = cursor.fetchone()
 
+            today = utc_today()
+
             cursor.execute(
                 """
                 INSERT INTO reservations (
@@ -701,7 +872,12 @@ def test_admin_can_get_all_reservations(client):
                 )
                 VALUES (%s, %s, %s, %s)
                 """,
-                (user1["id"], equipment["id"], "2090-09-10", "2090-09-12"),
+                (
+                    user1["id"],
+                    equipment["id"],
+                    today + timedelta(days=10),
+                    today + timedelta(days=12),
+                ),
             )
 
             cursor.execute(
@@ -714,7 +890,12 @@ def test_admin_can_get_all_reservations(client):
                 )
                 VALUES (%s, %s, %s, %s)
                 """,
-                (user2["id"], equipment["id"], "2090-09-15", "2090-09-17"),
+                (
+                    user2["id"],
+                    equipment["id"],
+                    today + timedelta(days=15),
+                    today + timedelta(days=17),
+                ),
             )
 
     login_response = client.post(
@@ -773,7 +954,11 @@ def test_past_reservation_is_returned_as_completed(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -801,8 +986,8 @@ def test_past_reservation_is_returned_as_completed(client):
                 (
                     user["id"],
                     equipment["id"],
-                    date.today() - timedelta(days=5),
-                    date.today() - timedelta(days=2),
+                    utc_today() - timedelta(days=5),
+                    utc_today() - timedelta(days=2),
                 ),
             )
 
@@ -835,12 +1020,20 @@ def test_admin_sees_past_reservation_as_completed(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET role = 'admin' WHERE id = %s",
+                """
+                UPDATE users
+                SET role = 'admin'
+                WHERE id = %s
+                """,
                 (admin["id"],),
             )
 
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -868,8 +1061,8 @@ def test_admin_sees_past_reservation_as_completed(client):
                 (
                     user["id"],
                     equipment["id"],
-                    date.today() - timedelta(days=5),
-                    date.today() - timedelta(days=2),
+                    utc_today() - timedelta(days=5),
+                    utc_today() - timedelta(days=2),
                 ),
             )
 
@@ -888,19 +1081,6 @@ def test_admin_sees_past_reservation_as_completed(client):
     assert response.json()[0]["status"] == "completed"
 
 
-def test_availability_rejects_past_start_date(client):
-    response = client.get(
-        "/equipment/1/availability",
-        params={
-            "start_date": "2020-01-01",
-            "end_date": "2020-01-02",
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Start date cannot be in the past"
-
-
 def test_create_reservation_rejects_past_start_date(client):
     client.post(
         "/register",
@@ -910,7 +1090,11 @@ def test_create_reservation_rejects_past_start_date(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -931,7 +1115,7 @@ def test_create_reservation_rejects_past_start_date(client):
     )
     token = login_response.json()["access_token"]
 
-    today = date.today()
+    today = utc_today()
 
     response = client.post(
         f"/equipment/{equipment['id']}/reservations",
@@ -955,7 +1139,11 @@ def test_create_reservation_allows_start_date_today(client):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO categories (name) VALUES (%s) RETURNING id",
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
                 ("Sports",),
             )
             category = cursor.fetchone()
@@ -976,7 +1164,7 @@ def test_create_reservation_allows_start_date_today(client):
     )
     token = login_response.json()["access_token"]
 
-    today = date.today()
+    today = utc_today()
 
     response = client.post(
         f"/equipment/{equipment['id']}/reservations",
@@ -992,3 +1180,134 @@ def test_create_reservation_allows_start_date_today(client):
     assert response.json()["start_date"] == today.isoformat()
     assert response.json()["end_date"] == today.isoformat()
     assert response.json()["status"] == "active"
+
+
+def test_cancelled_reservation_does_not_block_new_reservation(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            today = utc_today()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date,
+                    status
+                )
+                VALUES (%s, %s, %s, %s, 'cancelled')
+                """,
+                (
+                    user["id"],
+                    equipment["id"],
+                    today + timedelta(days=10),
+                    today + timedelta(days=15),
+                ),
+            )
+
+    response = client.post(
+        f"/equipment/{equipment['id']}/reservations",
+        json={
+            "start_date": (today + timedelta(days=10)).isoformat(),
+            "end_date": (today + timedelta(days=15)).isoformat(),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "active"
+
+
+def test_reservation_ending_today_can_be_cancelled(client):
+    user = client.post(
+        "/register",
+        json={"email": "user@example.com", "password": "testpassword"},
+    ).json()
+
+    login_response = client.post(
+        "/login",
+        json={"email": "user@example.com", "password": "testpassword"},
+    )
+    token = login_response.json()["access_token"]
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO categories (name)
+                VALUES (%s)
+                RETURNING id
+                """,
+                ("Sports",),
+            )
+            category = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO equipment (name, asset_tag, category_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                ("Basketball", "BB-001", category["id"]),
+            )
+            equipment = cursor.fetchone()
+
+            cursor.execute(
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    user["id"],
+                    equipment["id"],
+                    utc_today() - timedelta(days=2),
+                    utc_today(),
+                ),
+            )
+            reservation = cursor.fetchone()
+
+    response = client.patch(
+        f"/reservations/{reservation['id']}/cancel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"

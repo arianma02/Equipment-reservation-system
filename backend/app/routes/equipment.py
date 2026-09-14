@@ -9,6 +9,7 @@ from app.schemas import (
 )
 from app.dependencies import get_current_admin
 from datetime import date
+from app.time_utils import utc_today
 from psycopg.errors import UniqueViolation
 
 router = APIRouter()
@@ -23,11 +24,17 @@ def get_equipment(
     conditions = []
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            sql = (
-                "SELECT e.id, e.name, e.asset_tag, e.category_id, e.status, c.name AS category_name "
-                "FROM equipment e "
-                "JOIN categories c ON e.category_id = c.id"
-            )
+            sql = """
+            SELECT
+                e.id,
+                e.name,
+                e.asset_tag,
+                e.category_id,
+                e.status,
+                c.name AS category_name
+            FROM equipment e
+            JOIN categories c ON e.category_id = c.id
+            """.strip()
             if category_id is not None:
                 params.append(category_id)
                 conditions.append("e.category_id = %s")
@@ -35,8 +42,8 @@ def get_equipment(
                 params.append(status)
                 conditions.append("e.status = %s")
             if conditions:
-                sql += " WHERE " + " AND ".join(conditions)
-            sql += " ORDER BY e.name"
+                sql += "\nWHERE " + "\n  AND ".join(conditions)
+            sql += "\nORDER BY e.name"
             cursor.execute(sql, params)
             equipment = cursor.fetchall()
     return equipment
@@ -47,9 +54,18 @@ def get_equipment_by_id(equipment_id: int):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT e.id, e.name, e.asset_tag, e.category_id, e.status, c.name AS category_name "
-                "FROM equipment e "
-                "JOIN categories c ON e.category_id = c.id WHERE e.id = %s",
+                """
+                SELECT
+                    e.id,
+                    e.name,
+                    e.asset_tag,
+                    e.category_id,
+                    e.status,
+                    c.name AS category_name
+                FROM equipment e
+                JOIN categories c ON e.category_id = c.id
+                WHERE e.id = %s
+                """,
                 (equipment_id,),
             )
             equipment = cursor.fetchone()
@@ -68,7 +84,7 @@ def check_availability(equipment_id: int, start_date: date, end_date: date):
         raise HTTPException(
             status_code=400, detail="Start date cannot be after end date"
         )
-    if start_date < date.today():
+    if start_date < utc_today():
         raise HTTPException(
             status_code=400,
             detail="Start date cannot be in the past",
@@ -77,7 +93,12 @@ def check_availability(equipment_id: int, start_date: date, end_date: date):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM equipment WHERE id = %s", (equipment_id,)
+                """
+                SELECT status
+                FROM equipment
+                WHERE id = %s
+                """,
+                (equipment_id,),
             )
             equipment_status = cursor.fetchone()
 
@@ -87,10 +108,14 @@ def check_availability(equipment_id: int, start_date: date, end_date: date):
             if equipment_status["status"] != "active":
                 return {"available": False}
             cursor.execute(
-                "SELECT 1 FROM reservations "
-                "WHERE equipment_id = %s AND status = 'active' "
-                "AND start_date <= %s "
-                "AND end_date >= %s",
+                """
+                SELECT 1
+                FROM reservations
+                WHERE equipment_id = %s
+                  AND status = 'active'
+                  AND start_date <= %s
+                  AND end_date >= %s
+                """,
                 (equipment_id, end_date, start_date),
             )
 
@@ -129,19 +154,16 @@ def create_equipment(equipment: EquipmentCreate):
             try:
                 cursor.execute(
                     """
-                    INSERT INTO equipment (
+                    INSERT INTO equipment (name, asset_tag, category_id)
+                    VALUES (%s, %s, %s)
+                    RETURNING
+                        id,
                         name,
                         asset_tag,
-                        category_id
-                    )
-                    VALUES (%s, %s, %s)
-                    RETURNING id, name, asset_tag, category_id, status
+                        category_id,
+                        status
                     """,
-                    (
-                        equipment.name,
-                        equipment.asset_tag,
-                        equipment.category_id,
-                    ),
+                    (equipment.name, equipment.asset_tag, equipment.category_id),
                 )
 
                 new_equipment = cursor.fetchone()
@@ -222,8 +244,8 @@ def update_equipment(equipment_id: int, update: EquipmentUpdate):
                     UPDATE reservations
                     SET status = 'cancelled'
                     WHERE equipment_id = %s
-                    AND status = 'active'
-                    AND end_date >= CURRENT_DATE
+                      AND status = 'active'
+                      AND end_date >= CURRENT_DATE
                     """,
                     (equipment_id,),
                 )
@@ -233,8 +255,8 @@ def update_equipment(equipment_id: int, update: EquipmentUpdate):
                     SELECT 1
                     FROM reservations
                     WHERE equipment_id = %s
-                    AND status = 'active'
-                    AND end_date >= CURRENT_DATE
+                      AND status = 'active'
+                      AND end_date >= CURRENT_DATE
                     LIMIT 1
                     """,
                     (equipment_id,),
@@ -256,7 +278,12 @@ def update_equipment(equipment_id: int, update: EquipmentUpdate):
                         category_id = %s,
                         status = %s
                     WHERE id = %s
-                    RETURNING id, name, asset_tag, category_id, status
+                    RETURNING
+                        id,
+                        name,
+                        asset_tag,
+                        category_id,
+                        status
                     """,
                     (
                         new_name,

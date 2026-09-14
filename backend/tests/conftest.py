@@ -18,8 +18,9 @@ def client():
 def clean_database():
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(
-                "TRUNCATE reservations, equipment, categories, users RESTART IDENTITY CASCADE;"
-            )
+            cursor.execute("""
+                TRUNCATE reservations, equipment, categories, users
+                RESTART IDENTITY CASCADE
+                """)
 
     yield

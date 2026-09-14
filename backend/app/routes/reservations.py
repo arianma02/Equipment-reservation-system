@@ -9,7 +9,7 @@ from app.schemas import (
     AdminReservationResponse,
 )
 
-from datetime import date
+from app.time_utils import utc_today
 
 router = APIRouter()
 
@@ -26,43 +26,103 @@ def create_reservation(
 ):
     if reservation.start_date > reservation.end_date:
         raise HTTPException(
-            status_code=400, detail="Start date cannot be after end date"
+            status_code=400,
+            detail="Start date cannot be after end date",
         )
-    if reservation.start_date < date.today():
+
+    if reservation.start_date < utc_today():
         raise HTTPException(
             status_code=400,
             detail="Start date cannot be in the past",
         )
+
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT status FROM equipment WHERE id = %s FOR UPDATE",
-                (equipment_id,),
+                # Prevent account deactivation from racing with reservation creation.
+                """
+                SELECT status
+                FROM users
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (current_user["id"],),
             )
-            equipment = cursor.fetchone()
-            if not equipment:
-                raise HTTPException(status_code=404, detail="Equipment not found")
+            reservation_user = cursor.fetchone()
 
-            if equipment["status"] != "active":
+            if not reservation_user:
                 raise HTTPException(
-                    status_code=409, detail="Equipment is not available for reservation"
+                    status_code=401,
+                    detail="Invalid token",
+                )
+
+            if reservation_user["status"] != "active":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account is disabled",
                 )
 
             cursor.execute(
-                "SELECT 1 FROM reservations WHERE equipment_id = %s AND status = 'active' AND start_date <= %s AND end_date >= %s",
+                # Serialize reservation attempts for the same equipment before checking overlap.
+                """
+                SELECT status
+                FROM equipment
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (equipment_id,),
+            )
+            equipment = cursor.fetchone()
+
+            if not equipment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Equipment not found",
+                )
+
+            if equipment["status"] != "active":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Equipment is not available for reservation",
+                )
+
+            cursor.execute(
+                """
+                SELECT 1
+                FROM reservations
+                WHERE equipment_id = %s
+                  AND status = 'active'
+                  AND start_date <= %s
+                  AND end_date >= %s
+                """,
                 (equipment_id, reservation.end_date, reservation.start_date),
             )
+
             overlapping_reservation = cursor.fetchone()
+
             if overlapping_reservation:
                 raise HTTPException(
                     status_code=409,
                     detail="Equipment is already reserved for the selected dates",
                 )
+
             cursor.execute(
-                "INSERT INTO reservations "
-                "(user_id, equipment_id, start_date, end_date) "
-                "VALUES (%s, %s, %s, %s) "
-                "RETURNING id, user_id, equipment_id, start_date, end_date, status",
+                """
+                INSERT INTO reservations (
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING
+                    id,
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date,
+                    status
+                """,
                 (
                     current_user["id"],
                     equipment_id,
@@ -72,6 +132,7 @@ def create_reservation(
             )
 
             new_reservation = cursor.fetchone()
+
     return new_reservation
 
 
@@ -112,10 +173,18 @@ def cancel_reservation(reservation_id: int, current_user=Depends(get_current_use
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, user_id, equipment_id, start_date, end_date, status "
-                "FROM reservations "
-                "WHERE id = %s "
-                "FOR UPDATE ",
+                """
+                SELECT
+                    id,
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date,
+                    status
+                FROM reservations
+                WHERE id = %s
+                FOR UPDATE
+                """,
                 (reservation_id,),
             )
             reservation = cursor.fetchone()
@@ -132,15 +201,23 @@ def cancel_reservation(reservation_id: int, current_user=Depends(get_current_use
                 raise HTTPException(
                     status_code=409, detail="Reservation already cancelled"
                 )
-            if reservation["end_date"] < date.today():
+            if reservation["end_date"] < utc_today():
                 raise HTTPException(
                     status_code=409, detail="Completed reservations cannot be cancelled"
                 )
             cursor.execute(
-                "UPDATE reservations "
-                "SET status = 'cancelled' "
-                "WHERE id = %s "
-                "RETURNING id, user_id, equipment_id, start_date, end_date, status;",
+                """
+                UPDATE reservations
+                SET status = 'cancelled'
+                WHERE id = %s
+                RETURNING
+                    id,
+                    user_id,
+                    equipment_id,
+                    start_date,
+                    end_date,
+                    status
+                """,
                 (reservation["id"],),
             )
             cancelled_reservation = cursor.fetchone()

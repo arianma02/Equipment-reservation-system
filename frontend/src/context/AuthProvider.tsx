@@ -14,22 +14,22 @@ async function fetchCurrentUser(): Promise<User | null> {
     return null;
   }
 
-  try {
-    const response = await fetch(`${API_URL}/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const response = await fetch(`${API_URL}/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error("Failed to load user");
-    }
-
-    return await response.json();
-  } catch {
+  if (response.status === 401 || response.status === 403) {
     localStorage.removeItem("access_token");
     return null;
   }
+
+  if (!response.ok) {
+    throw new Error("Failed to load user");
+  }
+
+  return await response.json();
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -37,8 +37,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [authLoading, setAuthLoading] = useState(true);
 
   async function refreshUser() {
-    const currentUser = await fetchCurrentUser();
-    setUser(currentUser);
+    try {
+      const currentUser = await fetchCurrentUser();
+      setUser(currentUser);
+    } catch {
+      return;
+    }
   }
 
   function logout() {
@@ -48,9 +52,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     async function loadCurrentUser() {
-      const currentUser = await fetchCurrentUser();
-      setUser(currentUser);
-      setAuthLoading(false);
+      try {
+        const currentUser = await fetchCurrentUser();
+        setUser(currentUser);
+      } catch {
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
     }
 
     loadCurrentUser();

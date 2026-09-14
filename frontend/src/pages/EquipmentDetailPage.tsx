@@ -160,62 +160,70 @@ function EquipmentDetailPage() {
           <p>Status: {equipment.status}</p>
         </div>
 
-        <h3>Check availability</h3>
+        {equipment.status === "active" ? (
+          <>
+            <h3>Check availability</h3>
 
-        <div className="date-fields">
-          <label>
-            Start date
-            <input
-              type="date"
-              value={startDate}
-              min={today}
-              onChange={handleStartDateChange}
-            />
-          </label>
+            <div className="date-fields">
+              <label>
+                Start date
+                <input
+                  type="date"
+                  value={startDate}
+                  min={today}
+                  onChange={handleStartDateChange}
+                />
+              </label>
 
-          <label>
-            End date
-            <input
-              type="date"
-              value={endDate}
-              min={today}
-              onChange={handleEndDateChange}
-            />
-          </label>
-        </div>
+              <label>
+                End date
+                <input
+                  type="date"
+                  value={endDate}
+                  min={today}
+                  onChange={handleEndDateChange}
+                />
+              </label>
+            </div>
 
-        <button
-          onClick={checkAvailability}
-          disabled={!startDate || !endDate || availabilityLoading}
-        >
-          {availabilityLoading ? "Checking..." : "Check availability"}
-        </button>
-
-        {availability === true && <p className="success-message">Available</p>}
-
-        {availability === false && (
-          <p className="error-message">Not available</p>
-        )}
-
-        {availabilityError && (
-          <p className="error-message">{availabilityError}</p>
-        )}
-
-        {user ? (
-          <div className="reservation-action">
             <button
-              onClick={createReservation}
-              disabled={!startDate || !endDate || reservationLoading}
+              onClick={checkAvailability}
+              disabled={!startDate || !endDate || availabilityLoading}
             >
-              {reservationLoading ? "Reserving..." : "Reserve"}
+              {availabilityLoading ? "Checking..." : "Check availability"}
             </button>
 
-            {reservationMessage && <p>{reservationMessage}</p>}
-          </div>
+            {availability === true && (
+              <p className="success-message">Available</p>
+            )}
+
+            {availability === false && (
+              <p className="error-message">Not available</p>
+            )}
+
+            {availabilityError && (
+              <p className="error-message">{availabilityError}</p>
+            )}
+
+            {user ? (
+              <div className="reservation-action">
+                <button
+                  onClick={createReservation}
+                  disabled={!startDate || !endDate || reservationLoading}
+                >
+                  {reservationLoading ? "Reserving..." : "Reserve"}
+                </button>
+
+                {reservationMessage && <p>{reservationMessage}</p>}
+              </div>
+            ) : (
+              <p>
+                <Link to="/login">Login</Link> to reserve this equipment.
+              </p>
+            )}
+          </>
         ) : (
-          <p>
-            <Link to="/login">Login</Link> to reserve this equipment.
-          </p>
+          <p>This equipment is not currently available for reservation.</p>
         )}
       </section>
     </main>

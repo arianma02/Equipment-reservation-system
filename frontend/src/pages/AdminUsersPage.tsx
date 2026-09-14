@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
 import type { User } from "../types";
+import { useAuth } from "../hooks/useAuth";
 
 function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updateError, setUpdateError] = useState("");
+
+  const { user: currentUser, refreshUser } = useAuth();
 
   useEffect(() => {
     async function loadUsers() {
@@ -91,6 +94,9 @@ function AdminUsersPage() {
       } else {
         setUpdateError("Failed to update user");
       }
+    }
+    if (currentUser?.id === userId) {
+      await refreshUser();
     }
   }
 

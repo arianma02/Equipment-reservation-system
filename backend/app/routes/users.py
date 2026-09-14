@@ -11,7 +11,6 @@ router = APIRouter()
 def deactivate_account(current_user=Depends(get_current_user)):
     with get_connection() as connection:
         with connection.cursor() as cursor:
-
             if current_user["role"] == "admin":
                 cursor.execute("""
                     SELECT id
@@ -29,17 +28,7 @@ def deactivate_account(current_user=Depends(get_current_user)):
                     )
 
             cursor.execute(
-                """
-                UPDATE reservations
-                SET status = 'cancelled'
-                WHERE user_id = %s
-                  AND status = 'active'
-                  AND end_date >= CURRENT_DATE
-                """,
-                (current_user["id"],),
-            )
-
-            cursor.execute(
+                # Disable first so the user row is locked before reservations are cancelled.
                 """
                 UPDATE users
                 SET status = 'disabled'
@@ -50,6 +39,17 @@ def deactivate_account(current_user=Depends(get_current_user)):
             )
 
             updated_user = cursor.fetchone()
+
+            cursor.execute(
+                """
+                UPDATE reservations
+                SET status = 'cancelled'
+                WHERE user_id = %s
+                  AND status = 'active'
+                  AND end_date >= CURRENT_DATE
+                """,
+                (current_user["id"],),
+            )
 
     return updated_user
 
@@ -110,7 +110,7 @@ def update_user(user_id: int, update: UserUpdate):
                     SELECT id
                     FROM users
                     WHERE role = 'admin'
-                    AND status = 'active'
+                      AND status = 'active'
                     FOR UPDATE
                     """)
 
@@ -127,8 +127,8 @@ def update_user(user_id: int, update: UserUpdate):
                     UPDATE reservations
                     SET status = 'cancelled'
                     WHERE user_id = %s
-                    AND status = 'active'
-                    AND end_date >= CURRENT_DATE
+                      AND status = 'active'
+                      AND end_date >= CURRENT_DATE
                     """,
                     (user_id,),
                 )

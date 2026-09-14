@@ -22,7 +22,12 @@ def get_current_user(
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, email, role, status FROM users WHERE id = %s", (user_id,)
+                """
+                SELECT id, email, role, status
+                FROM users
+                WHERE id = %s
+                """,
+                (user_id,),
             )
             user = cursor.fetchone()
 
