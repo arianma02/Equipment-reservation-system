@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 function Header() {
@@ -10,14 +10,14 @@ function Header() {
         <h1>Equipment Reservation System</h1>
 
         <nav className="header-nav">
-          <Link to="/equipment">Equipment</Link>
+          <NavLink to="/equipment">Equipment</NavLink>
 
           {user ? (
             <>
-              <Link to="/reservations/me">My Reservations</Link>
-              <Link to="/account">My Account</Link>
+              <NavLink to="/reservations/me">My Reservations</NavLink>
+              <NavLink to="/account">My Account</NavLink>
 
-              {user.role === "admin" && <Link to="/admin">Admin</Link>}
+              {user.role === "admin" && <NavLink to="/admin">Admin</NavLink>}
 
               <span className="header-user">Logged in as {user.email}</span>
 
@@ -25,8 +25,8 @@ function Header() {
             </>
           ) : (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Register</Link>
+              <NavLink to="/login">Login</NavLink>
+              <NavLink to="/register">Register</NavLink>
             </>
           )}
         </nav>

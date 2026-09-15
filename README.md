@@ -24,6 +24,25 @@ Users can browse equipment, check availability, create and cancel reservations, 
 - Admin access to all reservations
 - Responsive layout for desktop and mobile
 
+## Admin functionality
+
+The application includes an admin interface for managing users, equipment,
+categories, and reservations.
+
+### Admin dashboard
+
+![Admin dashboard](screenshots/admin.png)
+
+### Equipment management
+
+![Equipment management](screenshots/manage-equipment.png)
+
+### Reservation management
+
+![Reservation management](screenshots/manage-reservations.png)
+
+Admin credentials are not publicly provided for the live demo.
+
 ## Tech Stack
 
 ### Backend

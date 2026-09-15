@@ -165,7 +165,12 @@ function EquipmentDetailPage() {
         <div className="equipment-detail-info">
           <p>Asset tag: {equipment.asset_tag}</p>
           <p>Category: {equipment.category_name}</p>
-          <p>Status: {equipment.status}</p>
+          <p>
+            Status:{" "}
+            <span className={`status-badge status-${equipment.status}`}>
+              {equipment.status}
+            </span>
+          </p>
         </div>
 
         {equipment.status === "active" ? (

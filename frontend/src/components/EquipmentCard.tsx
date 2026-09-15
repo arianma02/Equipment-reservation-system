@@ -23,7 +23,10 @@ function EquipmentCard({
 
       <p>Asset tag: {assetTag}</p>
       <p>Category: {categoryName}</p>
-      <p>Status: {status}</p>
+      <p>
+        Status:{" "}
+        <span className={`status-badge status-${status}`}>{status}</span>
+      </p>
     </article>
   );
 }

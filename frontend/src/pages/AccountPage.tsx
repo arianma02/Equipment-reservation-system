@@ -67,7 +67,12 @@ function AccountPage() {
       <section className="account-card">
         <p>Email: {user?.email}</p>
         <p>Role: {user?.role}</p>
-        <p>Status: {user?.status}</p>
+        <p>
+          Status:{" "}
+          <span className={`status-badge status-${user?.status}`}>
+            {user?.status}
+          </span>
+        </p>
 
         <button
           className="danger-button"
