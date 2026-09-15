@@ -29,7 +29,7 @@ if database_url:
         "sqlalchemy.url",
         database_url.replace("%", "%%"),
     )
-    
+
 else:
     local_database_url = URL.create(
         drivername="postgresql+psycopg",
