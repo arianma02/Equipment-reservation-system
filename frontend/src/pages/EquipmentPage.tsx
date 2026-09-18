@@ -76,45 +76,52 @@ function EquipmentPage() {
 
   return (
     <main>
-      <h2>Equipment</h2>
+      <section className="page-heading">
+        <p className="eyebrow">EQUIPMENT</p>
+        <h2>Browse equipment</h2>
+        <p className="page-description">
+          Find available equipment and check reservation dates.
+        </p>
+      </section>
 
-      <div className="form-row">
-        <label>
-          Status:
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
-            <option value="">All</option>
-            <option value="active">Active</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="retired">Retired</option>
-          </select>
-        </label>
+      <section className="filter-card">
+        <div className="form-row">
+          <label>
+            Status:
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="retired">Retired</option>
+            </select>
+          </label>
 
-        <label>
-          Category:
-          <select
-            value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
-          >
-            <option value="">All</option>
+          <label>
+            Category:
+            <select
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+            >
+              <option value="">All</option>
 
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {categoryError && <p>{categoryError}</p>}
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {categoryError && <p className="error-message">{categoryError}</p>}
+      </section>
 
       {loading ? (
-        <p>Loading...</p>
+        <div className="page-state">Loading equipment...</div>
       ) : error ? (
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       ) : equipment.length === 0 ? (
         <p className="empty-message">
           No equipment matches the selected filters.

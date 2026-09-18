@@ -181,7 +181,7 @@ function AdminCategoriesPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading categories...</p>
+        <div className="page-state">Loading categories...</div>
       </main>
     );
   }
@@ -189,21 +189,30 @@ function AdminCategoriesPage() {
   if (error) {
     return (
       <main>
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>Manage Categories</h2>
+      <section className="page-heading">
+        <p className="eyebrow">ADMINISTRATION</p>
+        <h2>Manage categories</h2>
+        <p className="page-description">
+          Create, edit, and remove equipment categories.
+        </p>
+      </section>
 
       <section className="admin-form-card">
-        <h3>Add Category</h3>
+        <div className="admin-form-heading">
+          <p className="admin-card-label">CREATE</p>
+          <h3>Add category</h3>
+        </div>
 
-        <form className="form-row" onSubmit={createCategory}>
+        <form className="category-create-form" onSubmit={createCategory}>
           <label>
-            Name:
+            Name
             <input
               type="text"
               value={name}
@@ -213,11 +222,11 @@ function AdminCategoriesPage() {
           </label>
 
           <button type="submit" disabled={creating}>
-            {creating ? "Creating..." : "Add Category"}
+            {creating ? "Creating..." : "Add category"}
           </button>
         </form>
 
-        {createError && <p>{createError}</p>}
+        {createError && <p className="error-message">{createError}</p>}
       </section>
 
       <div className="admin-item-list">
@@ -229,7 +238,7 @@ function AdminCategoriesPage() {
                 onSubmit={(event) => updateCategory(event, category.id)}
               >
                 <label>
-                  Name:
+                  Name
                   <input
                     type="text"
                     value={editName}
@@ -252,9 +261,14 @@ function AdminCategoriesPage() {
               </form>
             ) : (
               <>
-                <p className="admin-item-title">{category.name}</p>
+                <div className="admin-item-heading">
+                  <div>
+                    <p className="admin-card-label">CATEGORY</p>
+                    <h3>{category.name}</h3>
+                  </div>
+                </div>
 
-                <div className="button-row">
+                <div className="admin-category-actions">
                   <button onClick={() => startEditing(category)}>Edit</button>
 
                   <button
@@ -270,8 +284,8 @@ function AdminCategoriesPage() {
         ))}
       </div>
 
-      {deleteError && <p>{deleteError}</p>}
-      {updateError && <p>{updateError}</p>}
+      {deleteError && <p className="error-message">{deleteError}</p>}
+      {updateError && <p className="error-message">{updateError}</p>}
     </main>
   );
 }

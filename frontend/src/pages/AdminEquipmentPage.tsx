@@ -193,7 +193,7 @@ function AdminEquipmentPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading equipment...</p>
+        <div className="page-state">Loading equipment...</div>
       </main>
     );
   }
@@ -201,21 +201,30 @@ function AdminEquipmentPage() {
   if (error) {
     return (
       <main>
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>Manage Equipment</h2>
+      <section className="page-heading">
+        <p className="eyebrow">ADMINISTRATION</p>
+        <h2>Manage equipment</h2>
+        <p className="page-description">
+          Add equipment and manage existing items, categories, and status.
+        </p>
+      </section>
 
       <section className="admin-form-card">
-        <h3>Add Equipment</h3>
+        <div className="admin-form-heading">
+          <p className="admin-card-label">CREATE</p>
+          <h3>Add equipment</h3>
+        </div>
 
-        <form className="form-row" onSubmit={createEquipment}>
+        <form className="admin-create-form" onSubmit={createEquipment}>
           <label>
-            Name:
+            Name
             <input
               type="text"
               value={name}
@@ -225,7 +234,7 @@ function AdminEquipmentPage() {
           </label>
 
           <label>
-            Asset tag:
+            Asset tag
             <input
               type="text"
               value={assetTag}
@@ -235,7 +244,7 @@ function AdminEquipmentPage() {
           </label>
 
           <label>
-            Category:
+            Category
             <select
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
@@ -252,16 +261,27 @@ function AdminEquipmentPage() {
           </label>
 
           <button type="submit" disabled={creating}>
-            {creating ? "Creating..." : "Add Equipment"}
+            {creating ? "Creating..." : "Add equipment"}
           </button>
         </form>
 
-        {createError && <p>{createError}</p>}
+        {createError && <p className="error-message">{createError}</p>}
       </section>
 
       <div className="admin-item-list">
         {equipment.map((item) => (
           <article className="admin-item-card" key={item.id}>
+            <div className="admin-item-heading">
+              <div>
+                <p className="admin-card-label">EQUIPMENT</p>
+                <h3>{item.name}</h3>
+              </div>
+
+              <span className={`status-badge status-${item.status}`}>
+                {item.status}
+              </span>
+            </div>
+
             {editingId === item.id ? (
               <form
                 className="admin-edit-form"
@@ -269,7 +289,7 @@ function AdminEquipmentPage() {
               >
                 <div className="form-row">
                   <label>
-                    Name:
+                    Name
                     <input
                       type="text"
                       value={editName}
@@ -279,7 +299,7 @@ function AdminEquipmentPage() {
                   </label>
 
                   <label>
-                    Asset tag:
+                    Asset tag
                     <input
                       type="text"
                       value={editAssetTag}
@@ -289,7 +309,7 @@ function AdminEquipmentPage() {
                   </label>
 
                   <label>
-                    Category:
+                    Category
                     <select
                       value={editCategoryId}
                       onChange={(event) =>
@@ -319,37 +339,43 @@ function AdminEquipmentPage() {
                 </div>
               </form>
             ) : (
-              <>
-                <p className="admin-item-title">{item.name}</p>
-                <p>Asset tag: {item.asset_tag}</p>
-                <p>Category: {item.category_name}</p>
-              </>
+              <div className="admin-equipment-meta">
+                <div>
+                  <span>Asset tag</span>
+                  <strong>{item.asset_tag}</strong>
+                </div>
+
+                <div>
+                  <span>Category</span>
+                  <strong>{item.category_name}</strong>
+                </div>
+              </div>
             )}
 
-            <div className="form-row admin-item-actions">
-              {editingId !== item.id && (
+            {editingId !== item.id && (
+              <div className="admin-item-actions">
                 <button onClick={() => startEditing(item)}>Edit</button>
-              )}
 
-              <label>
-                Status:
-                <select
-                  value={item.status}
-                  onChange={(event) =>
-                    updateEquipment(item.id, { status: event.target.value })
-                  }
-                >
-                  <option value="active">Active</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="retired">Retired</option>
-                </select>
-              </label>
-            </div>
+                <label className="admin-status-control">
+                  Status
+                  <select
+                    value={item.status}
+                    onChange={(event) =>
+                      updateEquipment(item.id, { status: event.target.value })
+                    }
+                  >
+                    <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </label>
+              </div>
+            )}
           </article>
         ))}
       </div>
 
-      {updateError && <p>{updateError}</p>}
+      {updateError && <p className="error-message">{updateError}</p>}
     </main>
   );
 }

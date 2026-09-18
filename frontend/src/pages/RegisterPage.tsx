@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { API_URL } from "../config";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 function RegisterPage() {
@@ -48,7 +48,7 @@ function RegisterPage() {
   if (authLoading) {
     return (
       <main>
-        <p>Loading...</p>
+        <div className="page-state">Loading...</div>
       </main>
     );
   }
@@ -60,7 +60,11 @@ function RegisterPage() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <h2>Register</h2>
+        <div className="auth-heading">
+          <p className="eyebrow">CREATE ACCOUNT</p>
+          <h2>Register</h2>
+          <p>Create an account to reserve available equipment.</p>
+        </div>
 
         <form className="auth-form" onSubmit={handleRegister}>
           <label>
@@ -84,10 +88,16 @@ function RegisterPage() {
             />
           </label>
 
-          <button type="submit">Register</button>
+          <button className="auth-submit" type="submit">
+            Register
+          </button>
 
-          {error && <p>{error}</p>}
+          {error && <p className="error-message">{error}</p>}
         </form>
+
+        <p className="auth-switch">
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
       </div>
     </main>
   );

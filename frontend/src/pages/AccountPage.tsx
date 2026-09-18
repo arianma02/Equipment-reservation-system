@@ -62,27 +62,55 @@ function AccountPage() {
 
   return (
     <main>
-      <h2>My Account</h2>
+      <section className="page-heading">
+        <p className="eyebrow">ACCOUNT</p>
+        <h2>My account</h2>
+        <p className="page-description">
+          View your account information and manage your account.
+        </p>
+      </section>
 
       <section className="account-card">
-        <p>Email: {user?.email}</p>
-        <p>Role: {user?.role}</p>
-        <p>
-          Status:{" "}
-          <span className={`status-badge status-${user?.status}`}>
-            {user?.status}
-          </span>
-        </p>
+        <h3>Account details</h3>
 
-        <button
-          className="danger-button"
-          onClick={deactivateAccount}
-          disabled={deactivating}
-        >
-          {deactivating ? "Deactivating..." : "Deactivate Account"}
-        </button>
+        <div className="account-details">
+          <div>
+            <span>Email</span>
+            <strong>{user?.email}</strong>
+          </div>
 
-        {error && <p>{error}</p>}
+          <div>
+            <span>Role</span>
+            <strong>{user?.role}</strong>
+          </div>
+
+          <div>
+            <span>Status</span>
+            <span className={`status-badge status-${user?.status}`}>
+              {user?.status}
+            </span>
+          </div>
+        </div>
+
+        <div className="danger-zone">
+          <div>
+            <h3>Deactivate account</h3>
+            <p>
+              Deactivating your account will sign you out and prevent further
+              access.
+            </p>
+          </div>
+
+          <button
+            className="danger-button"
+            onClick={deactivateAccount}
+            disabled={deactivating}
+          >
+            {deactivating ? "Deactivating..." : "Deactivate account"}
+          </button>
+        </div>
+
+        {error && <p className="error-message">{error}</p>}
       </section>
     </main>
   );

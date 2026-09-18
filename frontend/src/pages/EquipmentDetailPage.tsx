@@ -144,7 +144,7 @@ function EquipmentDetailPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading equipment...</p>
+        <div className="page-state">Loading equipment...</div>
       </main>
     );
   }
@@ -152,93 +152,125 @@ function EquipmentDetailPage() {
   if (error || !equipment) {
     return (
       <main>
-        <p>Failed to load equipment</p>
+        <div className="page-state error-state">Failed to load equipment</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>{equipment.name}</h2>
+      <Link className="back-link" to="/">
+        ← Back to equipment
+      </Link>
 
-      <section className="equipment-detail-card">
-        <div className="equipment-detail-info">
-          <p>Asset tag: {equipment.asset_tag}</p>
-          <p>Category: {equipment.category_name}</p>
-          <p>
-            Status:{" "}
-            <span className={`status-badge status-${equipment.status}`}>
-              {equipment.status}
-            </span>
-          </p>
+      <section className="page-heading equipment-detail-heading">
+        <p className="eyebrow">{equipment.category_name}</p>
+
+        <div className="detail-title-row">
+          <h2>{equipment.name}</h2>
+
+          <span className={`status-badge status-${equipment.status}`}>
+            {equipment.status}
+          </span>
         </div>
 
-        {equipment.status === "active" ? (
-          <>
-            <h3>Check availability</h3>
+        <p className="page-description">
+          View equipment information and check reservation availability.
+        </p>
+      </section>
 
-            <div className="date-fields">
-              <label>
-                Start date
-                <input
-                  type="date"
-                  value={startDate}
-                  min={today}
-                  onChange={handleStartDateChange}
-                />
-              </label>
+      <div className="equipment-detail-layout">
+        <section className="equipment-detail-card">
+          <h3>Equipment details</h3>
 
-              <label>
-                End date
-                <input
-                  type="date"
-                  value={endDate}
-                  min={today}
-                  onChange={handleEndDateChange}
-                />
-              </label>
+          <div className="equipment-detail-meta">
+            <div>
+              <span>Asset tag</span>
+              <strong>{equipment.asset_tag}</strong>
             </div>
 
-            <button
-              onClick={checkAvailability}
-              disabled={!startDate || !endDate || availabilityLoading}
-            >
-              {availabilityLoading ? "Checking..." : "Check availability"}
-            </button>
+            <div>
+              <span>Category</span>
+              <strong>{equipment.category_name}</strong>
+            </div>
+          </div>
+        </section>
 
-            {availability === true && (
-              <p className="success-message">Available</p>
-            )}
-
-            {availability === false && (
-              <p className="error-message">Not available</p>
-            )}
-
-            {availabilityError && (
-              <p className="error-message">{availabilityError}</p>
-            )}
-
-            {user ? (
-              <div className="reservation-action">
-                <button
-                  onClick={createReservation}
-                  disabled={!startDate || !endDate || reservationLoading}
-                >
-                  {reservationLoading ? "Reserving..." : "Reserve"}
-                </button>
-
-                {reservationMessage && <p>{reservationMessage}</p>}
+        <section className="availability-card">
+          {equipment.status === "active" ? (
+            <>
+              <div className="availability-heading">
+                <h3>Check availability</h3>
+                <p>Select the dates you want to reserve this equipment.</p>
               </div>
-            ) : (
-              <p>
-                <Link to="/login">Login</Link> to reserve this equipment.
-              </p>
-            )}
-          </>
-        ) : (
-          <p>This equipment is not currently available for reservation.</p>
-        )}
-      </section>
+
+              <div className="date-fields">
+                <label>
+                  Start date
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={today}
+                    onChange={handleStartDateChange}
+                  />
+                </label>
+
+                <label>
+                  End date
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={today}
+                    onChange={handleEndDateChange}
+                  />
+                </label>
+              </div>
+
+              <button
+                onClick={checkAvailability}
+                disabled={!startDate || !endDate || availabilityLoading}
+              >
+                {availabilityLoading ? "Checking..." : "Check availability"}
+              </button>
+
+              {availability === true && (
+                <p className="success-message">Available</p>
+              )}
+
+              {availability === false && (
+                <p className="error-message">Not available</p>
+              )}
+
+              {availabilityError && (
+                <p className="error-message">{availabilityError}</p>
+              )}
+
+              {user ? (
+                <div className="reservation-action">
+                  <button
+                    onClick={createReservation}
+                    disabled={!startDate || !endDate || reservationLoading}
+                  >
+                    {reservationLoading ? "Reserving..." : "Reserve equipment"}
+                  </button>
+
+                  {reservationMessage && (
+                    <p className="reservation-message">{reservationMessage}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="login-prompt">
+                  <Link to="/login">Login</Link> to reserve this equipment.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="unavailable-message">
+              This equipment is not currently available for reservation.
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

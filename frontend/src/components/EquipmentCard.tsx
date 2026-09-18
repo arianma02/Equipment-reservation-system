@@ -17,16 +17,23 @@ function EquipmentCard({
 }: EquipmentCardProps) {
   return (
     <article className="equipment-card">
-      <h2>
-        <Link to={`/equipment/${id}`}>{name}</Link>
-      </h2>
+      <div className="equipment-card-header">
+        <div>
+          <p className="equipment-category">{categoryName}</p>
+          <h2>{name}</h2>
+        </div>
 
-      <p>Asset tag: {assetTag}</p>
-      <p>Category: {categoryName}</p>
-      <p>
-        Status:{" "}
         <span className={`status-badge status-${status}`}>{status}</span>
-      </p>
+      </div>
+
+      <div className="equipment-meta">
+        <span>Asset tag</span>
+        <strong>{assetTag}</strong>
+      </div>
+
+      <Link className="equipment-link" to={`/equipment/${id}`}>
+        View equipment →
+      </Link>
     </article>
   );
 }

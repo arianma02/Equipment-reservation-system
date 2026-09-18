@@ -92,7 +92,7 @@ function AdminReservationsPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading reservations...</p>
+        <div className="page-state">Loading reservations...</div>
       </main>
     );
   }
@@ -100,49 +100,74 @@ function AdminReservationsPage() {
   if (error) {
     return (
       <main>
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>Manage Reservations</h2>
+      <section className="page-heading">
+        <p className="eyebrow">ADMINISTRATION</p>
+        <h2>Manage reservations</h2>
+        <p className="page-description">
+          Review equipment reservations and cancel active bookings when needed.
+        </p>
+      </section>
 
       {reservations.length === 0 ? (
-        <p>No reservations found.</p>
+        <div className="empty-message">No reservations found.</div>
       ) : (
         <div className="admin-item-list">
           {reservations.map((reservation) => (
             <article className="admin-item-card" key={reservation.id}>
-              <p className="admin-item-title">{reservation.equipment_name}</p>
+              <div className="admin-item-heading">
+                <div>
+                  <p className="admin-card-label">RESERVATION</p>
+                  <h3>{reservation.equipment_name}</h3>
+                </div>
 
-              <p>User: {reservation.user_email}</p>
-              <p>Start date: {reservation.start_date}</p>
-              <p>End date: {reservation.end_date}</p>
-
-              <p>
-                Status:{" "}
                 <span className={`status-badge status-${reservation.status}`}>
                   {reservation.status}
                 </span>
-              </p>
+              </div>
+
+              <div className="admin-reservation-user">
+                <span>User</span>
+                <strong>{reservation.user_email}</strong>
+              </div>
+
+              <div className="admin-reservation-dates">
+                <div>
+                  <span>Start date</span>
+                  <strong>{reservation.start_date}</strong>
+                </div>
+
+                <div>
+                  <span>End date</span>
+                  <strong>{reservation.end_date}</strong>
+                </div>
+              </div>
 
               {reservation.status === "active" && (
-                <button
-                  className="danger-button"
-                  onClick={() => cancelReservation(reservation.id)}
-                  disabled={cancellingId === reservation.id}
-                >
-                  {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
-                </button>
+                <div className="admin-reservation-actions">
+                  <button
+                    className="danger-button"
+                    onClick={() => cancelReservation(reservation.id)}
+                    disabled={cancellingId === reservation.id}
+                  >
+                    {cancellingId === reservation.id
+                      ? "Cancelling..."
+                      : "Cancel reservation"}
+                  </button>
+                </div>
               )}
             </article>
           ))}
         </div>
       )}
 
-      {cancelError && <p>{cancelError}</p>}
+      {cancelError && <p className="error-message">{cancelError}</p>}
     </main>
   );
 }

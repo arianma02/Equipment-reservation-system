@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { API_URL } from "../config";
 
@@ -45,7 +45,7 @@ function LoginPage() {
   if (authLoading) {
     return (
       <main>
-        <p>Loading...</p>
+        <div className="page-state">Loading...</div>
       </main>
     );
   }
@@ -57,9 +57,13 @@ function LoginPage() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <h2>Login</h2>
+        <div className="auth-heading">
+          <p className="eyebrow">WELCOME BACK</p>
+          <h2>Login</h2>
+          <p>Sign in to manage your equipment reservations.</p>
+        </div>
 
-        {message && <p>{message}</p>}
+        {message && <p className="success-message">{message}</p>}
 
         <form className="auth-form" onSubmit={handleLogin}>
           <label>
@@ -82,10 +86,16 @@ function LoginPage() {
             />
           </label>
 
-          <button type="submit">Login</button>
+          <button className="auth-submit" type="submit">
+            Login
+          </button>
 
-          {error && <p>{error}</p>}
+          {error && <p className="error-message">{error}</p>}
         </form>
+
+        <p className="auth-switch">
+          Don't have an account? <Link to="/register">Register</Link>
+        </p>
       </div>
     </main>
   );

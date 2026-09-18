@@ -103,7 +103,7 @@ function AdminUsersPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading users...</p>
+        <div className="page-state">Loading users...</div>
       </main>
     );
   }
@@ -111,23 +111,38 @@ function AdminUsersPage() {
   if (error) {
     return (
       <main>
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>Manage Users</h2>
+      <section className="page-heading">
+        <p className="eyebrow">ADMINISTRATION</p>
+        <h2>Manage users</h2>
+        <p className="page-description">
+          View user accounts and manage their roles and status.
+        </p>
+      </section>
 
       <div className="admin-item-list">
         {users.map((user) => (
-          <article className="admin-item-card" key={user.id}>
-            <p className="admin-item-title">{user.email}</p>
+          <article className="admin-item-card user-admin-card" key={user.id}>
+            <div className="admin-item-heading">
+              <div>
+                <p className="admin-card-label">USER</p>
+                <h3>{user.email}</h3>
+              </div>
 
-            <div className="form-row">
+              <span className={`status-badge status-${user.status}`}>
+                {user.status}
+              </span>
+            </div>
+
+            <div className="admin-user-controls">
               <label>
-                Role:
+                Role
                 <select
                   value={user.role}
                   onChange={(event) =>
@@ -140,7 +155,7 @@ function AdminUsersPage() {
               </label>
 
               <label>
-                Status:
+                Status
                 <select
                   value={user.status}
                   onChange={(event) =>
@@ -156,7 +171,7 @@ function AdminUsersPage() {
         ))}
       </div>
 
-      {updateError && <p>{updateError}</p>}
+      {updateError && <p className="error-message">{updateError}</p>}
     </main>
   );
 }

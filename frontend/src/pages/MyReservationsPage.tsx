@@ -96,7 +96,7 @@ function MyReservationsPage() {
   if (loading) {
     return (
       <main>
-        <p>Loading reservations...</p>
+        <div className="page-state">Loading reservations...</div>
       </main>
     );
   }
@@ -104,47 +104,69 @@ function MyReservationsPage() {
   if (error) {
     return (
       <main>
-        <p>{error}</p>
+        <div className="page-state error-state">{error}</div>
       </main>
     );
   }
 
   return (
     <main>
-      <h2>My Reservations</h2>
+      <section className="page-heading">
+        <p className="eyebrow">RESERVATIONS</p>
+        <h2>My reservations</h2>
+        <p className="page-description">
+          View your current and previous equipment reservations.
+        </p>
+      </section>
 
       {reservations.length === 0 ? (
-        <p>No reservations found.</p>
+        <div className="empty-message">No reservations found.</div>
       ) : (
         <div className="reservation-list">
           {reservations.map((reservation) => (
             <article className="reservation-card" key={reservation.id}>
-              <h3>{reservation.equipment_name}</h3>
+              <div className="reservation-card-header">
+                <div>
+                  <p className="reservation-label">EQUIPMENT</p>
+                  <h3>{reservation.equipment_name}</h3>
+                </div>
 
-              <p>Start: {reservation.start_date}</p>
-              <p>End: {reservation.end_date}</p>
-              <p>
-                Status:{" "}
                 <span className={`status-badge status-${reservation.status}`}>
                   {reservation.status}
                 </span>
-              </p>
+              </div>
+
+              <div className="reservation-dates">
+                <div>
+                  <span>Start date</span>
+                  <strong>{reservation.start_date}</strong>
+                </div>
+
+                <div>
+                  <span>End date</span>
+                  <strong>{reservation.end_date}</strong>
+                </div>
+              </div>
 
               {reservation.status === "active" && (
-                <button
-                  className="danger-button"
-                  onClick={() => cancelReservation(reservation.id)}
-                  disabled={cancellingId === reservation.id}
-                >
-                  {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
-                </button>
+                <div className="reservation-card-actions">
+                  <button
+                    className="danger-button"
+                    onClick={() => cancelReservation(reservation.id)}
+                    disabled={cancellingId === reservation.id}
+                  >
+                    {cancellingId === reservation.id
+                      ? "Cancelling..."
+                      : "Cancel reservation"}
+                  </button>
+                </div>
               )}
             </article>
           ))}
         </div>
       )}
 
-      {cancelError && <p>{cancelError}</p>}
+      {cancelError && <p className="error-message">{cancelError}</p>}
     </main>
   );
 }
