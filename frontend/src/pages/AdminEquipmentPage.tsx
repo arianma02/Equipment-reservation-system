@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
 import type { Category, Equipment } from "../types";
@@ -23,7 +24,7 @@ function AdminEquipmentPage() {
   useEffect(() => {
     async function loadEquipment() {
       try {
-        const response = await fetch(`${API_URL}/equipment`);
+        const response = await apiFetch(`${API_URL}/equipment`);
 
         if (!response.ok) {
           throw new Error("Failed to load equipment");
@@ -44,7 +45,7 @@ function AdminEquipmentPage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const response = await fetch(`${API_URL}/categories`);
+        const response = await apiFetch(`${API_URL}/categories`);
 
         if (!response.ok) {
           throw new Error("Failed to load categories");
@@ -74,7 +75,7 @@ function AdminEquipmentPage() {
     setCreating(true);
 
     try {
-      const response = await fetch(`${API_URL}/equipment`, {
+      const response = await apiFetch(`${API_URL}/equipment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +129,7 @@ function AdminEquipmentPage() {
     setUpdateError("");
 
     try {
-      const response = await fetch(`${API_URL}/equipment/${equipmentId}`, {
+      const response = await apiFetch(`${API_URL}/equipment/${equipmentId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

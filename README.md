@@ -1,207 +1,109 @@
 # Equipment Reservation System
 
-A full-stack web application for reserving shared equipment.
+A full-stack application for reserving shared equipment. Users can check availability, book equipment, and cancel reservations. Admins manage equipment, categories, users, and bookings.
 
-Users can browse equipment, check availability, create and cancel reservations, and manage their account. Administrators can manage users, equipment, categories, and reservations.
-
-## Live Site
-
-- Frontend: https://equipment-reservation-system.vercel.app
-- API documentation: https://equipment-reservation-system-vcdc.onrender.com/docs
+[Live app](https://equipment-reservation-system.vercel.app) · [API documentation](https://equipment-reservation-system-vcdc.onrender.com/docs)
 
 ## Features
 
-- User registration and login
-- JWT authentication
-- User and admin roles
-- Equipment browsing and filtering
-- Equipment availability checks by date
-- Reservation creation and cancellation
-- Prevention of overlapping reservations
-- Reservation history
-- Admin management of users
-- Admin management of equipment and categories
-- Admin access to all reservations
-- Responsive layout for desktop and mobile
+- JWT authentication with backend-enforced user and admin permissions
+- Equipment browsing, filtering, and availability checks
+- Booking and cancellation with reservation history
+- PostgreSQL transactions and row locking to prevent overlapping bookings
+- Admin controls for equipment, categories, users, and reservations
 
-## Admin functionality
+## Stack
 
-The application includes an admin interface for managing users, equipment,
-categories, and reservations.
+- **Backend:** Python, FastAPI, PostgreSQL, psycopg, Alembic
+- **Frontend:** React, TypeScript, Vite
+- **Tests:** pytest, Playwright
+- **Hosting:** Vercel frontend → Render API → Neon PostgreSQL
 
-### Admin dashboard
+## Screenshots
 
 ![Admin dashboard](screenshots/admin.png)
-
-### Equipment management
-
 ![Equipment management](screenshots/manage-equipment.png)
-
-### Reservation management
-
 ![Reservation management](screenshots/manage-reservations.png)
 
-Admin credentials are not publicly provided for the live demo.
+Admin credentials are not shared for the public demo.
 
-## Tech Stack
+## Local setup
 
-### Backend
-
-- Python
-- FastAPI
-- PostgreSQL
-- psycopg
-- Alembic
-- Pydantic
-- pytest
-
-### Frontend
-
-- React
-- TypeScript
-- Vite
-- CSS
-
-### Deployment
-
-- Docker
-- Render
-- Neon
-- Vercel
-
-## Deployment Architecture
-
-```text
-Browser
-   |
-   v
-React frontend (Vercel)
-   |
-   | HTTPS
-   v
-FastAPI backend (Render)
-   |
-   | SQL
-   v
-PostgreSQL database (Neon)
-```
-
-The frontend communicates with the FastAPI backend over HTTP. The backend handles authentication, authorization, validation, reservation rules, and database access.
-
-## Local Setup
+Requires Python 3.14, Node.js 24, and PostgreSQL. Create a local application database before running migrations.
 
 ### Backend
 
-Go to the backend directory:
+From the project root, in PowerShell:
 
-```bash
+```powershell
 cd backend
-```
-
-Create a virtual environment:
-
-```bash
 python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-Activate it on Windows:
+Create `backend/.env` with `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, and `JWT_SECRET`. Alternatively, use `DATABASE_URL` for the database connection; it takes priority over the `DB_*` settings.
 
-```bash
-.venv\Scripts\activate
+```powershell
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
 ```
 
-Install the dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Create a `.env` file using `.env.example` as a reference.
-
-The local backend expects PostgreSQL to be running and uses:
-
-```text
-DB_NAME
-DB_USER
-DB_PASSWORD
-DB_HOST
-DB_PORT
-JWT_SECRET
-```
-
-Run the database migrations:
-
-```bash
-alembic upgrade head
-```
-
-Start the backend:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-The API will be available at:
-
-```text
-http://127.0.0.1:8000
-```
+The API runs at `http://127.0.0.1:8000`.
 
 ### Frontend
 
-From the project root:
+In another terminal, from the project root:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-The frontend uses `http://127.0.0.1:8000` as its default API URL during local development.
+The frontend defaults to the local API. Set `VITE_API_URL` to use a different backend.
 
-A different backend URL can be supplied with:
+### Docker
 
-```text
-VITE_API_URL
-```
+Run `docker compose up --build` from `backend`. This runs the API in a container and connects to PostgreSQL on the host machine.
 
 ## Testing
 
-Run the backend test suite:
+### Backend
 
-```bash
+Create a separate, disposable PostgreSQL database named `equipment_reservation_test`. In a separate PowerShell terminal, activate the backend virtual environment and run:
+
+```powershell
 cd backend
+.\.venv\Scripts\Activate.ps1
+$env:PYTHON_DOTENV_DISABLED = "1"
+$env:TEST_DATABASE_URL = "postgresql://TEST_USER:TEST_PASSWORD@localhost:5432/equipment_reservation_test"
+$env:DATABASE_URL = $env:TEST_DATABASE_URL
+python -m alembic upgrade head
 python -m pytest
 ```
 
-Run the frontend checks:
+Replace the connection placeholders with your test database details. Tests clear the database between cases and refuse to clear a database with another name. Run them serially. This terminal is configured for the test database; use another terminal for the normal application.
+
+Backend tests cover API behavior, permissions, date validation, concurrent booking, last-active-admin protection, and transaction rollback. They use real PostgreSQL to test database behavior.
+
+### Frontend
+
+From `frontend`:
 
 ```bash
-cd frontend
 npm run lint
 npm run build
+npx playwright install chromium
+npm run test:browser
 ```
 
-## Docker
+Browser tests cover login, booking, cancellation, conflicts, session expiry, permission errors, and outdated availability responses. They use mocked API responses; they do not test the full deployed system. Browser-test mode ignores local dotenv files.
 
-The backend can also be run with Docker.
+GitHub Actions runs backend tests, browser tests, frontend lint, and the frontend build on pushes and pull requests.
 
-From the `backend` directory:
+## Implementation notes
 
-```bash
-docker compose up --build
-```
-
-The local Docker setup runs the FastAPI application in a container and connects to PostgreSQL running on the host machine.
-
-## Security
-
-- Passwords are hashed before being stored.
-- Protected endpoints require JWT authentication.
-- User and admin permissions are enforced by the backend.
-- SQL values are passed using parameterized queries.
-- Application secrets and database credentials are supplied through environment variables.
-
-## CI
-
-GitHub Actions runs automated backend and frontend checks on pushes and pull requests.
+- Booking creation locks the user and equipment rows before checking dates and inserting within one transaction.
+- Admin updates and account deactivation share a PostgreSQL transaction advisory lock to coordinate changes affecting the last active admin.
+- Passwords are hashed, SQL values are parameterized, and credentials are supplied through environment variables.

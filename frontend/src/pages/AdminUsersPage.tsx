@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
 import type { User } from "../types";
@@ -22,7 +23,7 @@ function AdminUsersPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/users`, {
+        const response = await apiFetch(`${API_URL}/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -62,7 +63,7 @@ function AdminUsersPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const response = await apiFetch(`${API_URL}/users/${userId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

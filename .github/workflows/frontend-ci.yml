@@ -31,3 +31,8 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser regression tests
+        run: npm run test:browser

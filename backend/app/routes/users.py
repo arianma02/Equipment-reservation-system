@@ -7,11 +7,24 @@ from app.schemas import UserResponse, UserUpdate
 router = APIRouter()
 
 
+def lock_user_management(cursor):
+    # Shared by self-deactivation and admin updates; always acquire before row locks.
+    cursor.execute("SELECT pg_advisory_xact_lock(73241, 1)")
+
+
 @router.patch("/users/me/deactivate", response_model=UserResponse)
 def deactivate_account(current_user=Depends(get_current_user)):
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            if current_user["role"] == "admin":
+            lock_user_management(cursor)
+            # Role/status may have changed while waiting for the management lock.
+            cursor.execute(
+                "SELECT role, status FROM users WHERE id = %s", (current_user["id"],)
+            )
+            actor = cursor.fetchone()
+            if not actor or actor["status"] != "active":
+                raise HTTPException(status_code=403, detail="Account is disabled")
+            if actor["role"] == "admin":
                 cursor.execute("""
                     SELECT id
                     FROM users
@@ -79,6 +92,7 @@ def get_users():
 def update_user(user_id: int, update: UserUpdate):
     with get_connection() as connection:
         with connection.cursor() as cursor:
+            lock_user_management(cursor)
             cursor.execute(
                 """
                 SELECT id, email, role, status

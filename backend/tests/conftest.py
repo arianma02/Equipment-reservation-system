@@ -3,7 +3,16 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ["DB_NAME"] = "equipment_reservation_test"
+# Never load a developer's .env or silently inherit their application database.
+os.environ["PYTHON_DOTENV_DISABLED"] = "1"
+TEST_DATABASE_NAME = "equipment_reservation_test"
+test_url = os.environ.get("TEST_DATABASE_URL")
+if not test_url:
+    raise pytest.UsageError(
+        "Set TEST_DATABASE_URL to a disposable equipment_reservation_test database."
+    )
+os.environ["DATABASE_URL"] = test_url
+os.environ.setdefault("JWT_SECRET", "local-tests-only-not-for-deployment-32-bytes")
 
 from app.database import get_connection
 from app.main import app
@@ -20,6 +29,11 @@ def client():
 def clean_database():
     with get_connection() as connection:
         with connection.cursor() as cursor:
+            cursor.execute("SELECT current_database() AS name")
+            if cursor.fetchone()["name"] != TEST_DATABASE_NAME:
+                raise pytest.UsageError(
+                    "Refusing destructive tests outside equipment_reservation_test"
+                )
             cursor.execute("""
                 TRUNCATE reservations, equipment, categories, users
                 RESTART IDENTITY CASCADE

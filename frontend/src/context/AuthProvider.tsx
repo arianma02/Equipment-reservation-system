@@ -1,3 +1,4 @@
+import { apiFetch, SESSION_ENDED, SESSION_MESSAGE } from "../api";
 import { useEffect, useState, type ReactNode } from "react";
 import { API_URL } from "../config";
 import type { User } from "../types";
@@ -14,7 +15,7 @@ async function fetchCurrentUser(): Promise<User | null> {
     return null;
   }
 
-  const response = await fetch(`${API_URL}/me`, {
+  const response = await apiFetch(`${API_URL}/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -35,11 +36,13 @@ async function fetchCurrentUser(): Promise<User | null> {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [sessionMessage, setSessionMessage] = useState("");
 
   async function refreshUser() {
     try {
       const currentUser = await fetchCurrentUser();
       setUser(currentUser);
+      if (currentUser) setSessionMessage("");
     } catch {
       return;
     }
@@ -47,8 +50,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   function logout() {
     localStorage.removeItem("access_token");
+    setSessionMessage("");
     setUser(null);
   }
+
+  useEffect(() => {
+    function sessionEnded() {
+      setUser(null);
+      setSessionMessage(SESSION_MESSAGE);
+    }
+    window.addEventListener(SESSION_ENDED, sessionEnded);
+    return () => window.removeEventListener(SESSION_ENDED, sessionEnded);
+  }, []);
 
   useEffect(() => {
     async function loadCurrentUser() {
@@ -67,6 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider value={{ user, authLoading, refreshUser, logout }}>
+      {sessionMessage && <p role="alert">{sessionMessage}</p>}
       {children}
     </AuthContext.Provider>
   );

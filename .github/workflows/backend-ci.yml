@@ -24,6 +24,8 @@ jobs:
           --health-retries=5
 
     env:
+      PYTHON_DOTENV_DISABLED: "1"
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equipment_reservation_test
       DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: equipment_reservation_test

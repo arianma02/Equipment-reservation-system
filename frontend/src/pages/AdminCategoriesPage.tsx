@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
 import type { Category } from "../types";
@@ -19,7 +20,7 @@ function AdminCategoriesPage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const response = await fetch(`${API_URL}/categories`);
+        const response = await apiFetch(`${API_URL}/categories`);
 
         if (!response.ok) {
           throw new Error("Failed to load categories");
@@ -51,7 +52,7 @@ function AdminCategoriesPage() {
     setCreating(true);
 
     try {
-      const response = await fetch(`${API_URL}/categories`, {
+      const response = await apiFetch(`${API_URL}/categories`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +104,7 @@ function AdminCategoriesPage() {
     setUpdateError("");
 
     try {
-      const response = await fetch(`${API_URL}/categories/${categoryId}`, {
+      const response = await apiFetch(`${API_URL}/categories/${categoryId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -155,7 +156,7 @@ function AdminCategoriesPage() {
     setDeleteError("");
 
     try {
-      const response = await fetch(`${API_URL}/categories/${categoryId}`, {
+      const response = await apiFetch(`${API_URL}/categories/${categoryId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

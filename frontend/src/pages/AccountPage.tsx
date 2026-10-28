@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config";
@@ -31,7 +32,7 @@ function AccountPage() {
     setDeactivating(true);
 
     try {
-      const response = await fetch(`${API_URL}/users/me/deactivate`, {
+      const response = await apiFetch(`${API_URL}/users/me/deactivate`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,

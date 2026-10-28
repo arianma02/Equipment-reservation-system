@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { apiFetch } from "../api";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import type { Equipment } from "../types";
@@ -6,6 +7,21 @@ import { API_URL } from "../config";
 
 function EquipmentDetailPage() {
   const { id } = useParams();
+  return <EquipmentDetails key={id} id={id} />;
+}
+
+function EquipmentDetails({ id }: { id: string | undefined }) {
+  const availabilityRequest = useRef(0);
+  const availabilityAbort = useRef<AbortController | null>(null);
+
+  function invalidateAvailability() {
+    availabilityRequest.current += 1;
+    availabilityAbort.current?.abort();
+    setAvailability(null);
+    setAvailabilityLoading(false);
+    setAvailabilityError("");
+    setReservationMessage("");
+  }
 
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,31 +42,43 @@ function EquipmentDetailPage() {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
+    const controller = new AbortController();
     async function loadEquipment() {
       setLoading(true);
       setError("");
       setEquipment(null);
 
       try {
-        const response = await fetch(`${API_URL}/equipment/${id}`);
+        const response = await apiFetch(`${API_URL}/equipment/${id}`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error("Failed to load equipment");
         }
 
         const data = await response.json();
-        setEquipment(data);
+        if (!controller.signal.aborted) setEquipment(data);
       } catch {
-        setError("Failed to load equipment");
+        if (!controller.signal.aborted) setError("Failed to load equipment");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
-    loadEquipment();
+    void loadEquipment();
+    return () => {
+      controller.abort();
+      availabilityRequest.current += 1;
+      availabilityAbort.current?.abort();
+    };
   }, [id]);
 
   async function checkAvailability() {
+    availabilityAbort.current?.abort();
+    const controller = new AbortController();
+    availabilityAbort.current = controller;
+    const request = ++availabilityRequest.current;
     setAvailabilityLoading(true);
     setAvailabilityError("");
     setAvailability(null);
@@ -61,8 +89,9 @@ function EquipmentDetailPage() {
       params.append("start_date", startDate);
       params.append("end_date", endDate);
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_URL}/equipment/${id}/availability?${params.toString()}`,
+        { signal: controller.signal },
       );
 
       const data = await response.json();
@@ -71,15 +100,19 @@ function EquipmentDetailPage() {
         throw new Error(data.detail || "Failed to check availability");
       }
 
-      setAvailability(data.available);
+      if (request === availabilityRequest.current)
+        setAvailability(data.available);
     } catch (error) {
+      if (request !== availabilityRequest.current || controller.signal.aborted)
+        return;
       if (error instanceof Error) {
         setAvailabilityError(error.message);
       } else {
         setAvailabilityError("Failed to check availability");
       }
     } finally {
-      setAvailabilityLoading(false);
+      if (request === availabilityRequest.current)
+        setAvailabilityLoading(false);
     }
   }
 
@@ -94,7 +127,7 @@ function EquipmentDetailPage() {
     setReservationMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_URL}/equipment/${equipment.id}/reservations`,
         {
           method: "POST",
@@ -115,8 +148,8 @@ function EquipmentDetailPage() {
         throw new Error(data.detail || "Failed to create reservation");
       }
 
+      invalidateAvailability();
       setReservationMessage("Reservation created");
-      setAvailability(null);
     } catch (error) {
       if (error instanceof Error) {
         setReservationMessage(error.message);
@@ -129,16 +162,12 @@ function EquipmentDetailPage() {
   }
   function handleStartDateChange(event: React.ChangeEvent<HTMLInputElement>) {
     setStartDate(event.target.value);
-    setAvailability(null);
-    setAvailabilityError("");
-    setReservationMessage("");
+    invalidateAvailability();
   }
 
   function handleEndDateChange(event: React.ChangeEvent<HTMLInputElement>) {
     setEndDate(event.target.value);
-    setAvailability(null);
-    setAvailabilityError("");
-    setReservationMessage("");
+    invalidateAvailability();
   }
 
   if (loading) {

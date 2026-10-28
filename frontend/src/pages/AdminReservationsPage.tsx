@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useEffect, useState } from "react";
 import { API_URL } from "../config";
 import type { AdminReservation } from "../types";
@@ -21,7 +22,7 @@ function AdminReservationsPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/reservations`, {
+        const response = await apiFetch(`${API_URL}/reservations`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -55,7 +56,7 @@ function AdminReservationsPage() {
     setCancellingId(reservationId);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_URL}/reservations/${reservationId}/cancel`,
         {
           method: "PATCH",
